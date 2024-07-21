@@ -59,7 +59,8 @@ Ctrl-c
 
 ## Backend: FreePascal/SQLite
 
-- SSR (Server Side Rendering). Like Web 1.0, with HTML/CSS at frontend using HTML Forms with POST/GET. Redbean at backend. Similar like LAMP.
+- SSR (Server Side Rendering). Like Web 1.0, with HTML/CSS at frontend
+  using HTML Forms with POST/GET. FreePascal at backend. Similar like LAMP.
 
 ## This is one of WeKan Multiverse prototypes
 
