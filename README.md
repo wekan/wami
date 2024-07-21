@@ -46,6 +46,10 @@ Keyboard keys `Ctrl` and `c`:
 Ctrl-c
 ```
 
+## Web framework
+
+https://wiki.freepascal.org/fpWeb_Tutorial
+
 ## Web browsers
 
 - Tested with all browsers, works also without Javascript:
