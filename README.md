@@ -1,5 +1,15 @@
 # Wami: WeKan made with FreePascal for Amiga etc
 
+## Screenshot
+
+Here is that wekan.pas compiled with FreePascal at
+AmigaOS 3.2 680x0, using IBrowse webbrowser,
+running at AmiBerry Amiga Emulator
+(AmiBerry executeable originally for RasPi4),
+running at M1 Air Asahi Ubuntu 24.04:
+
+![screenshot](screenshot.png)
+
 ## Cloning repo
 
 ```
