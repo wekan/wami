@@ -2,6 +2,9 @@
 
 ## Screenshot
 
+FreePascal compilers for many operating systems:
+https://www.freepascal.org/download.html
+
 Here is that wekan.pas compiled with FreePascal at
 AmigaOS 3.2 680x0, using IBrowse webbrowser,
 running at AmiBerry Amiga Emulator
