@@ -6,7 +6,7 @@ uses
   {$IFDEF UNIX}
   cthreads,
   {$ENDIF}
-  SysUtils, fphttpapp, HTTPDefs, httproute;
+  SysUtils, fphttpapp, HTTPDefs, httproute, Classes; // Add Classes unit
 
 procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
@@ -34,6 +34,7 @@ begin
     Add('<p><b>Cards</b>: <a href="/my-cards">My Cards</a>');
     Add(' - <a href="/due-cards">Due Cards</a>');
     Add(' - <a href="/import">Import</a></p>');
+    Add('<p><b>Upload</b>: <a href="/upload">Upload</a></p>');
     Add('<p><b>Search</b>: <a href="/global-search">Global Search</a>');
     Add('<p><b>Admin</b>: <a href="/broken-cards">Broken Cards</a>');
     Add(' - <a href="/setting">Setting</a>');
@@ -118,6 +119,91 @@ begin
   aResponse.ContentType:='text/html';
   aResponse.ContentLength:=Length(aResponse.Content);
   aResponse.SendContent;
+end;
+
+procedure uploadEndpoint(aRequest: TRequest; aResponse: TResponse);
+const
+  UPLOAD_FORM = 
+    '<form action="/upload" method="post" enctype="multipart/form-data">' +
+    '<input type="file" name="file" required>' +
+    '<input type="submit" value="Upload">' +
+    '</form>';
+  BUFFER_SIZE = 16384; // 16KB buffer
+var
+  ContentType: string;
+  UploadStream: TFileStream;
+  Buffer: array[0..BUFFER_SIZE-1] of Byte;
+  BytesRead: Integer;
+  FileName: string;
+  UploadDir: string;
+begin
+  if aRequest.Method = 'GET' then
+  begin
+    // Show upload form
+    aResponse.Content := UPLOAD_FORM;
+    aResponse.Code := 200;
+    aResponse.ContentType := 'text/html';
+    aResponse.ContentLength := Length(aResponse.Content);
+    aResponse.SendContent;
+    Exit;
+  end;
+
+  if aRequest.Method = 'POST' then
+  begin
+    ContentType := aRequest.ContentType;
+    if Pos('multipart/form-data', ContentType) = 0 then
+    begin
+      aResponse.Code := 400;
+      aResponse.Content := 'Invalid content type';
+      aResponse.SendContent;
+      Exit;  
+    end;
+    
+    try
+      // Create uploads directory if it doesn't exist
+      UploadDir := 'uploads';
+      if not DirectoryExists(UploadDir) then
+      begin
+        if not CreateDir(UploadDir) then
+        begin
+          aResponse.Code := 500;
+          aResponse.Content := 'Failed to create upload directory';
+          aResponse.SendContent;
+          Exit;
+        end;
+      end;
+
+      // Parse multipart form data to get filename
+      FileName := ExtractFileName(aRequest.Files[0].FileName);
+      
+      // Create output file stream
+      UploadStream := TFileStream.Create('uploads/' + FileName, fmCreate);
+      try
+        // Stream file data in chunks
+        while True do
+        begin
+          BytesRead := aRequest.Files[0].Stream.Read(Buffer, BUFFER_SIZE);
+          if BytesRead = 0 then Break;
+          UploadStream.WriteBuffer(Buffer, BytesRead);
+        end;
+
+        aResponse.Code := 200;
+        aResponse.Content := 'File uploaded successfully';
+      finally
+        UploadStream.Free;
+      end;
+    except
+      on E: Exception do
+      begin
+        aResponse.Code := 500;
+        aResponse.Content := 'Upload failed: ' + E.Message;
+      end;
+    end;
+
+    aResponse.ContentType := 'text/plain';
+    aResponse.ContentLength := Length(aResponse.Content);
+    aResponse.SendContent;
+  end;
 end;
 
 procedure registerEndpoint(aRequest: TRequest; aResponse: TResponse);
@@ -273,15 +359,6 @@ begin
   aResponse.SendContent;
 end;
 
-procedure attachmentsEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  aResponse.Content:='Attachments';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
 procedure translationEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
   aResponse.Content:='Translation';
@@ -313,7 +390,7 @@ end;
 //fm.setRoute("/*", "/assets/*")
 
 begin
-  Application.Port:=5000;
+  Application.Port:=5500;
   HTTPRouter.RegisterRoute('/', rmGet, @allPagesEndpoint);
   HTTPRouter.RegisterRoute('/sign-in', rmGet, @loginEndpoint);
   HTTPRouter.RegisterRoute('/sign-up', rmGet, @registerEndpoint);
@@ -334,7 +411,8 @@ begin
   HTTPRouter.RegisterRoute('/information', rmGet, @informationEndpoint);
   HTTPRouter.RegisterRoute('/people', rmGet, @peopleEndpoint);
   HTTPRouter.RegisterRoute('/admin-reports', rmGet, @adminReportsEndpoint);
-  HTTPRouter.RegisterRoute('/attachments', rmGet, @attachmentsEndpoint);
+  HTTPRouter.RegisterRoute('/upload', rmGet, @uploadEndpoint);
+  HTTPRouter.RegisterRoute('/upload', rmPost, @uploadEndpoint); // Add POST handler
   HTTPRouter.RegisterRoute('/translation', rmGet, @translationEndpoint);
   HTTPRouter.RegisterRoute('/json', rmGet, @jsonEndpoint);
   HTTPRouter.RegisterRoute('/catchall', rmAll, @catchallEndpoint, true);
