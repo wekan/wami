@@ -22,6 +22,8 @@ begin
   aResponse.Content := '';
   with aResponse.Contents do
   begin
+    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
+    Add('<html><head><title>WeKan</title></head><body>');
     Add('<h2>WeKan</h2>');
     Add('<p>' + aRequest.UserAgent + '</p>');
 
@@ -62,6 +64,7 @@ begin
     Add(' - <a href="/admin-reports">Admin Reports</a>');
     Add('- <a href="/attachments">Attachments</a>');
     Add(' - <a href="/translation">Translation</a></p>');
+    Add('</body></html>');
   end;
   aResponse.Code:=200;
   aResponse.ContentType:='text/html';
