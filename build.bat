@@ -1,5 +1,5 @@
-# Compiling with FreePascal
+REM Compiling with FreePascal
 fpc wekan.pas
 
-# Running
+REM Running
 wekan.exe
