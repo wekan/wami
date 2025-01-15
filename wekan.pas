@@ -4,7 +4,7 @@ program wekan;
 
 uses
   {$IFDEF UNIX}
-  cthreads,
+  cthreads, cmem,
   {$ENDIF}
   SysUtils, fphttpapp, HTTPDefs, httproute, Classes; // Add Classes unit
 
