@@ -26,7 +26,8 @@ begin
     Add('<html><head><title>WeKan</title></head><body>');
     Add('<h2>WeKan</h2>');
     Add('<p>' + aRequest.UserAgent + '</p>');
-
+    Add('<p>IPv4 Address: ' + aRequest.RemoteAddr + '</p>');
+    Add('<p>IPv6 Address: ' + aRequest.RemoteAddr + '</p>');
     // New code to show screen width and height
     Add('<p><span id="screenInfo"></span></p>');
     Add('<script language="JavaScript">');
@@ -685,6 +686,121 @@ begin
   aResponse.SendContent;
 end;
 
+procedure serveStaticFileEndpoint(aRequest: TRequest; aResponse: TResponse);
+var
+  FilePath: String;
+  FileStream: TFileStream;
+  FileExt: String;
+  MimeType: String;
+  IndexPath: String;
+  RequestPath: String;
+  FullPublicPath: String;
+  NormalizedFilePath: String;
+begin
+  // Security: Check for directory traversal attempts
+  RequestPath := aRequest.PathInfo;
+  if (Pos('..', RequestPath) > 0) or (Pos('/./', RequestPath) > 0) then
+  begin
+    aResponse.Code := 403;
+    aResponse.Content := 'Access denied: Invalid path';
+    aResponse.ContentType := 'text/plain';
+    aResponse.SendContent;
+    Exit;
+  end;
+
+  // Get absolute path to public directory for security checks
+  FullPublicPath := ExpandFileName('public');
+  
+  // Construct path to requested file in public directory
+  FilePath := 'public' + RequestPath;
+  
+  // If the path ends with a directory separator, append 'index.html'
+  if (Length(FilePath) > 0) and (FilePath[Length(FilePath)] = DirectorySeparator) then
+    FilePath := FilePath + 'index.html'
+  // Check if the path is a directory, and if so, look for index.html
+  else if DirectoryExists(FilePath) then
+  begin
+    IndexPath := IncludeTrailingPathDelimiter(FilePath) + 'index.html';
+    if FileExists(IndexPath) then
+      FilePath := IndexPath;
+  end;
+  
+  // Security: Ensure the file is within the public directory
+  NormalizedFilePath := ExpandFileName(FilePath);
+  if (Copy(NormalizedFilePath, 1, Length(FullPublicPath)) <> FullPublicPath) then
+  begin
+    aResponse.Code := 403;
+    aResponse.Content := 'Access denied: Path outside public directory';
+    aResponse.ContentType := 'text/plain';
+    aResponse.SendContent;
+    Exit;
+  end;
+  
+  // Check if file exists
+  if not FileExists(NormalizedFilePath) then
+  begin
+    // If file doesn't exist, let the catchall handle it
+    aResponse.Code := 404;
+    aResponse.Content := 'File not found: ' + aRequest.PathInfo;
+    aResponse.ContentType := 'text/plain';
+    aResponse.SendContent;
+    Exit;
+  end;
+  
+  try
+    // Determine content type based on file extension
+    FileExt := LowerCase(ExtractFileExt(NormalizedFilePath));
+    MimeType := 'application/octet-stream'; // Default MIME type
+    
+    if FileExt = '.html' then
+      MimeType := 'text/html'
+    else if FileExt = '.css' then
+      MimeType := 'text/css'
+    else if FileExt = '.js' then
+      MimeType := 'application/javascript'
+    else if FileExt = '.json' then
+      MimeType := 'application/json'
+    else if FileExt = '.png' then
+      MimeType := 'image/png'
+    else if FileExt = '.jpg' then
+      MimeType := 'image/jpeg'
+    else if FileExt = '.gif' then
+      MimeType := 'image/gif'
+    else if FileExt = '.svg' then
+      MimeType := 'image/svg+xml'
+    else if FileExt = '.ico' then
+      MimeType := 'image/x-icon'
+    else if FileExt = '.txt' then
+      MimeType := 'text/plain';
+      
+    // Open file and send its contents
+    FileStream := TFileStream.Create(FilePath, fmOpenRead or fmShareDenyWrite);
+    try
+      aResponse.ContentStream := FileStream;
+      aResponse.ContentType := MimeType;
+      aResponse.FreeContentStream := True; // Let TResponse free the stream
+      aResponse.SendContent;
+    except
+      on E: Exception do
+      begin
+        FileStream.Free;
+        aResponse.Code := 500;
+        aResponse.Content := 'Error serving file: ' + E.Message;
+        aResponse.ContentType := 'text/plain';
+        aResponse.SendContent;
+      end;
+    end;
+  except
+    on E: Exception do
+    begin
+      aResponse.Code := 500;
+      aResponse.Content := 'Error: ' + E.Message;
+      aResponse.ContentType := 'text/plain';
+      aResponse.SendContent;
+    end;
+  end;
+end;
+
 // We maintain a list of redirections to ensure that we don't break old URLs
 // when we change our routing scheme.
 //-- const redirections = {
@@ -720,13 +836,25 @@ begin
   HTTPRouter.RegisterRoute('/people', rmGet, @peopleEndpoint);
   HTTPRouter.RegisterRoute('/admin-reports', rmGet, @adminReportsEndpoint);
   HTTPRouter.RegisterRoute('/upload', rmGet, @uploadEndpoint);
-  HTTPRouter.RegisterRoute('/upload', rmPost, @uploadEndpoint); // Add POST handler
+  HTTPRouter.RegisterRoute('/upload', rmPost, @uploadEndpoint);
   HTTPRouter.RegisterRoute('/translation', rmGet, @translationEndpoint);
   HTTPRouter.RegisterRoute('/json', rmGet, @jsonEndpoint);
   HTTPRouter.RegisterRoute('/screeninfo', @screenInfoEndpoint);
+  
+  // Add static file server for files in the public directory
+  // This route should come before the catchall
+  HTTPRouter.RegisterRoute('/*', rmGet, @serveStaticFileEndpoint);
+  
+  // Fallback for any remaining requests
   HTTPRouter.RegisterRoute('/catchall', rmAll, @catchallEndpoint, true);
+  
+  // Create public directory if it doesn't exist
+  if not DirectoryExists('public') then
+    CreateDir('public');
+    
   Application.Threaded:=false;
   Application.Initialize;
   Writeln('Server is ready at localhost:' + IntToStr(Application.Port));
+  Writeln('Static files are served from the public/ directory');
   Application.Run;
 end.
