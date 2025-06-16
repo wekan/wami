@@ -24,9 +24,12 @@ begin
   begin
     Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
     Add('<html><head><title>WeKan</title></head><body>');
-    Add('<h2>WeKan</h2>');
+    Add('<h1>WeKan');
     Add('<p>Serverside UserAgent: ' + aRequest.UserAgent + '</p>');
-    Add('<p>Serverside IPv4: ' + aRequest.RemoteAddr + ', IPv6: ' + aRequest.RemoteAddr + '</p>');
+    // Chrome 137.0.7151.103 Linux: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+    // IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
+    // Netsurf 3.11 (28th December 2023): Mozilla/5.0 (X11; Linux) NetSurf/3.11
+    Add('<p>Serverside IPv4: ' + aRequest.RemoteAddr + '</p>');
     // New code to show screen width and height
     Add('<p><noscript><p>Browser does not support Javascript</noscript><script>document.write("Browser supports Javascript");</script>');
     Add('<p><span id="screenInfo"></span></p>');
@@ -43,6 +46,9 @@ begin
     Add('  document.getElementById("screenInfo").innerHTML = "Browser Javascript: window inner size: " + myWidth + " x " + myHeight;');
     Add('}');
     Add('window.onload = showBrowserWindowSize;');
+    // Chrome: Shows window size
+    // Netsurf: Supports document.write, but window size: undefined x undefined
+    // IBrowse: Supports document.write, but does not show window size text at all
     Add('</script>');
 
     Add('<p><a href="/">All Pages</a></p>');
@@ -65,7 +71,7 @@ begin
     Add(' - <a href="/admin-reports">Admin Reports</a>');
     Add('- <a href="/attachments">Attachments</a>');
     Add(' - <a href="/translation">Translation</a></p>');
-    Add('</body></html>');
+    Add('</h1></body></html>');
   end;
   aResponse.Code:=200;
   aResponse.ContentType:='text/html';
