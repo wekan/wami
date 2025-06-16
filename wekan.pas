@@ -57,10 +57,11 @@ begin
     Add('<html><head><title>WeKan</title></head><body>');
     Add('WeKan');
     Add('<p>Serverside UserAgent: ' + aRequest.UserAgent);
+    Writeln('Serverside UserAgent: ' + aRequest.UserAgent);
     Add('<p>Detected Browser: ' + WebBrowserName(aRequest.UserAgent) + '</p>');
-    Writeln('Serverside UserAgent: ' + aRequest.UserAgent + ' that is ' + WebBrowserName(aRequest.UserAgent) + '</p>');
-    Add('<p>Serverside IPv4: ' + aRequest.RemoteAddr + '</p>');
     Writeln('Detected Browser: ' + WebBrowserName(aRequest.UserAgent));
+    Add('<p>Serverside IPv4: ' + aRequest.RemoteAddr + '</p>');
+    Writeln('Serverside IPv4: ' + aRequest.RemoteAddr);
     // New code to show screen width and height
     Add('<p><noscript><p>Browser does not support Javascript</noscript><script>document.write("Browser supports Javascript");</script>');
     Add('<p><span id="screenInfo"></span></p>');
