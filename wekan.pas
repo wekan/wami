@@ -19,19 +19,23 @@ begin
   BrowserName := '';
   if Pos('Chrome', UserAgent) > 0 then
   begin
-    BrowserName := BrowserName + 'Chrome';
-  end;
-  if Pos('IBrowse', UserAgent) > 0 then
+    BrowserName := 'Chrome';
+  end
+  else if Pos('IBrowse', UserAgent) > 0 then
   begin
-    BrowserName := BrowserName + 'IBrowse';
-  end;
-  if Pos('NetSurf', UserAgent) > 0 then
+    BrowserName := 'IBrowse';
+  end
+  else if Pos('NetSurf', UserAgent) > 0 then
   begin
-    BrowserName := BrowserName + 'NetSurf';
-  end;
-  if Pos('Dillo', UserAgent) > 0 then
+    BrowserName := 'NetSurf';
+  end
+  else if Pos('Dillo', UserAgent) > 0 then
   begin
-    BrowserName := BrowserName + 'Dillo';
+    BrowserName := 'Dillo';
+  end
+  else
+  begin
+    BrowserName := 'Unknown';
   end;
   Result := BrowserName;
 end;
@@ -53,8 +57,8 @@ begin
     Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
     Add('<html><head><title>WeKan</title></head><body>');
     Add('WeKan');
-    Add('<p>Serverside UserAgent: ' + aRequest.UserAgent + '</p>');
-    Writeln('Serverside UserAgent: ' + aRequest.UserAgent);
+    Add('<p>Serverside UserAgent: ' + aRequest.UserAgent + ' that is ' + WebBrowserName(aRequest.UserAgent) + '</p>');
+    Writeln('Serverside UserAgent: ' + aRequest.UserAgent + ' that is ' + WebBrowserName(aRequest.UserAgent) + '</p>');
     Add('<p>Serverside IPv4: ' + aRequest.RemoteAddr + '</p>');
     Writeln('Serverside IPv4: ' + aRequest.RemoteAddr);
     // New code to show screen width and height
