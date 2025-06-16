@@ -13,6 +13,7 @@ function WebBrowserName(const UserAgent: string): String;
 // MorphOS IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
 // NetSurf 3.11 (28th December 2023): Mozilla/5.0 (X11; Linux) NetSurf/3.11
 // FreeDOS Dillo: Mozilla/4.0 (compatible; Dillo 3.0)
+// Ubuntu Desktop Dillo:  Dillo/3.0.5
 // iPhone: Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Mobile/15E148 Safari/604.1
 // Ubuntu Touch Morph Browser: Mozilla/5.0 (Linux; Ubuntu 24.04 like Android 9) AppleWebKit/537.36 Chrome/87.0.4280.144 Mobile Safari/537.36
 // Ubuntu Desktop Morph Browser: Mozilla/5.0 (Linux; Ubuntu 25.04) AppleWebKit/537.36 Chrome/87.0.4280.144 Safari/537.36
@@ -31,7 +32,14 @@ begin
   end
   else if Pos('Dillo', UserAgent) > 0 then
   begin
-    BrowserName := 'Dillo';
+    if Pos('Mozilla', UserAgent) > 0 then
+    begin
+      BrowserName := 'DilloFreeDOS';
+    end
+    else
+    begin
+      BrowserName := 'DilloDesktop';
+    end
   end
   else if Pos('iPhone', UserAgent) > 0 then
   begin
