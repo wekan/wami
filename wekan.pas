@@ -24,7 +24,7 @@ begin
   begin
     Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
     Add('<html><head><title>WeKan</title></head><body>');
-    Add('<h1>WeKan');
+    Add('WeKan');
     Add('<p>Serverside UserAgent: ' + aRequest.UserAgent + '</p>');
     // Chrome 137.0.7151.103 Linux: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
     // IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
@@ -71,7 +71,7 @@ begin
     Add(' - <a href="/admin-reports">Admin Reports</a>');
     Add('- <a href="/attachments">Attachments</a>');
     Add(' - <a href="/translation">Translation</a></p>');
-    Add('</h1></body></html>');
+    Add('</body></html>');
   end;
   aResponse.Code:=200;
   aResponse.ContentType:='text/html';
