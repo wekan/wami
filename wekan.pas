@@ -43,7 +43,7 @@ begin
   end
   else if Pos('iPhone', UserAgent) > 0 then
   begin
-    BrowserName := 'iPhone';
+    BrowserName := 'iPhoneSafari';
   end
   else if Pos('Ubuntu', UserAgent) > 0 then
   begin
