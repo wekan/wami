@@ -26,10 +26,13 @@ begin
     Add('<html><head><title>WeKan</title></head><body>');
     Add('WeKan');
     Add('<p>Serverside UserAgent: ' + aRequest.UserAgent + '</p>');
-    // Chrome 137.0.7151.103 Linux: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
-    // IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
+    Writeln('Serverside UserAgent: ' + aRequest.UserAgent);
+    // Ubuntu Chrome: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+    // MorphOS IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
     // Netsurf 3.11 (28th December 2023): Mozilla/5.0 (X11; Linux) NetSurf/3.11
+    // FreeDOS Dillo: Mozilla/4.0 (compatible; Dillo 3.0)
     Add('<p>Serverside IPv4: ' + aRequest.RemoteAddr + '</p>');
+    Writeln('Serverside IPv4: ' + aRequest.RemoteAddr);
     // New code to show screen width and height
     Add('<p><noscript><p>Browser does not support Javascript</noscript><script>document.write("Browser supports Javascript");</script>');
     Add('<p><span id="screenInfo"></span></p>');
