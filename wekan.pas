@@ -8,6 +8,34 @@ uses
   {$ENDIF}
   SysUtils, fphttpapp, HTTPDefs, httproute, Classes; // Add Classes unit
 
+function WebBrowserName(const UserAgent: string): String;
+// Ubuntu Chrome: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+// MorphOS IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
+// NetSurf 3.11 (28th December 2023): Mozilla/5.0 (X11; Linux) NetSurf/3.11
+// FreeDOS Dillo: Mozilla/4.0 (compatible; Dillo 3.0)
+var
+  BrowserName: String;
+begin
+  BrowserName := '';
+  if Pos('Chrome', UserAgent) > 0 then
+  begin
+    BrowserName := BrowserName + 'Chrome';
+  end;
+  if Pos('IBrowse', UserAgent) > 0 then
+  begin
+    BrowserName := BrowserName + 'IBrowse';
+  end;
+  if Pos('NetSurf', UserAgent) > 0 then
+  begin
+    BrowserName := BrowserName + 'NetSurf';
+  end;
+  if Pos('Dillo', UserAgent) > 0 then
+  begin
+    BrowserName := BrowserName + 'Dillo';
+  end;
+  Result := BrowserName;
+end;
+
 procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
   aResponse.Content:='This endpoint is not available';
@@ -27,10 +55,6 @@ begin
     Add('WeKan');
     Add('<p>Serverside UserAgent: ' + aRequest.UserAgent + '</p>');
     Writeln('Serverside UserAgent: ' + aRequest.UserAgent);
-    // Ubuntu Chrome: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
-    // MorphOS IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
-    // Netsurf 3.11 (28th December 2023): Mozilla/5.0 (X11; Linux) NetSurf/3.11
-    // FreeDOS Dillo: Mozilla/4.0 (compatible; Dillo 3.0)
     Add('<p>Serverside IPv4: ' + aRequest.RemoteAddr + '</p>');
     Writeln('Serverside IPv4: ' + aRequest.RemoteAddr);
     // New code to show screen width and height
