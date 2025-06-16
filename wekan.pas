@@ -54,7 +54,7 @@ begin
     // IBrowse: Supports document.write, but does not show window size text at all
     Add('</script>');
 
-    Add('<p><a href="/">All Pages</a></p>');
+    Add('<p><a href="/">All Pages</a> - <a href="/multidrag/">Multidrag</a></p>');
     Add('<p><b>Login</b>: <a href="/sign-in">Sign In</a>');
     Add(' - <a href="/sign-up">Sign Up</a>');
     Add(' - <a href="/forgot-password">Forgot Password</a></p>');
