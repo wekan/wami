@@ -16,7 +16,6 @@ function WebBrowserName(const UserAgent: string): String;
 var
   BrowserName: String;
 begin
-  BrowserName := '';
   if Pos('Chrome', UserAgent) > 0 then
   begin
     BrowserName := 'Chrome';
