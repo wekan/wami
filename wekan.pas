@@ -25,9 +25,9 @@ begin
     Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
     Add('<html><head><title>WeKan</title></head><body>');
     Add('<h2>WeKan</h2>');
-    Add('<p>' + aRequest.UserAgent + '</p>');
-    Add('<p>IPv4 Address: ' + aRequest.RemoteAddr + '</p>');
-    Add('<p>IPv6 Address: ' + aRequest.RemoteAddr + '</p>');
+    Add('<p><noscript><p>No Javascript support</noscript><script>document.write("Javascript is supported");</script>');
+    Add('<p>UserAgent: ' + aRequest.UserAgent + '</p>');
+    Add('IPv4: ' + aRequest.RemoteAddr + ', IPv6: ' + aRequest.RemoteAddr + '</p>');
     // New code to show screen width and height
     Add('<p><span id="screenInfo"></span></p>');
     Add('<script language="JavaScript">');
@@ -40,7 +40,7 @@ begin
     Add('    myWidth = document.documentElement.clientWidth || document.body.clientWidth;');
     Add('    myHeight = document.documentElement.clientHeight || document.body.clientHeight;');
     Add('  }');
-    Add('  document.getElementById("screenInfo").innerHTML = "Browser window inner size: " + myWidth + " x " + myHeight;');
+    Add('  document.getElementById("screenInfo").innerHTML = "Javascript: Browser window inner size: " + myWidth + " x " + myHeight;');
     Add('}');
     Add('window.onload = showBrowserWindowSize;');
     Add('</script>');
