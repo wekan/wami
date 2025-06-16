@@ -21,11 +21,7 @@ var
   BrowserName: String;
 begin
   BrowserName := '';
-  if Pos('Chrome', UserAgent) > 0 then
-  begin
-    BrowserName := 'Chrome/Brave';
-  end
-  else if Pos('IBrowse', UserAgent) > 0 then
+  if Pos('IBrowse', UserAgent) > 0 then
   begin
     BrowserName := 'IBrowse';
   end
@@ -45,12 +41,16 @@ begin
   begin
     if Pos('Android', UserAgent) > 0 then
     begin
-      BrowserName := 'UbuntuTouch';
+      BrowserName := 'UbuntuTouchMorph';
     end
     else
     begin
-      BrowserName := 'UbuntuDesktop';
+      BrowserName := 'UbuntuDesktopMorph';
     end
+  end
+  else if Pos('Chrome', UserAgent) > 0 then
+  begin
+    BrowserName := 'Chrome/Brave';
   end
   else
   begin
