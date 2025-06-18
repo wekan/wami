@@ -353,11 +353,14 @@ begin
     // IBrowse does not support image inside of button. FreeDOS Dillo supports it, but better to get image visible at IBrowser, having image outside of button.
     // FreeDOS Dillo requires image width and height in pixels. Setting it to "auto" produces error.
     Add('  <tr bgcolor="#2980b9">');
-    Add('    <td vAlign="middle"><button class="js-add-board" title="Add Board" aria-label="Add Board" width="20" href="" color="#FFFFFF" bgcolor="#000000">Add Board</button></td>');
-    Add('    <td vAlign="middle"><img src="font/star.gif" width="20" height="20"><button class="js-star-board" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list." href="#">Star board</button></td>');
-    Add('    <td vAlign="middle"><img src="font/arrow/white/duplicate.gif" width="20" height="20"><button class="js-clone-board" title="Duplicate board" aria-label="Duplicate board" href="#">Duplicate board</button></td>');
-    Add('    <td vAlign="middle"><img src="font/arrow/white/archive.gif" width="20" height="20"><button class="js-archive-board" title="Move to Archive" aria-label="Move to Archive" href="#">Archive board</button></td>');
-    Add('    <td vAlign="middle" colspan="4">Orgs | Teams</td>');
+    Add('    <td align="left" valign="top"><button class="js-add-board" title="Add Board" aria-label="Add Board" width="20" href="" color="#FFFFFF" bgcolor="#000000">Add Board</button></td>');
+    Add('    <td align="right" valign="top"><img src="font/star.gif" width="20" height="20"></td>');
+    Add('    <td align="left" valign="top"><button class="js-star-board" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list." href="#">Star board</button></td>');
+    Add('    <td align="right" valign="top"><img src="font/arrow/white/duplicate.gif" width="20" height="20"></td>');
+    Add('    <td align="left" valign="top"><button class="js-clone-board" title="Duplicate board" aria-label="Duplicate board" href="#">Duplicate board</button></td>');
+    Add('    <td align="right" valign="top"><img src="font/arrow/white/archive.gif" width="20" height="20"></td>');
+    Add('    <td align="left" valign="top"><button class="js-archive-board" title="Move to Archive" aria-label="Move to Archive" href="#">Archive board</button></td>');
+    Add('    <td>Teams/Orgs</td>');
     Add('  </tr>');
     Add('</table>');
     Add('<div class="kanban">');
