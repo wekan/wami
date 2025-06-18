@@ -350,6 +350,8 @@ begin
     Add('  <tr>');
     Add('    <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>My Boards</b></font></td>');
     Add('  </tr>');
+    // IE 3 at Win95 does not support HTML button at all. Buttons are required for accessibility, so it seems it's not possible to support IE 3.
+    // IE 6 at Win2k does work with this button HTML code.
     // IBrowse does not support image inside of button. FreeDOS Dillo supports it, but better to get image visible at IBrowser, having image outside of button.
     // FreeDOS Dillo requires image width and height in pixels. Setting it to "auto" produces error.
     // FreeDOS Dillo requires buttons to be at table from left to right, because without table button width is full page width.
