@@ -350,14 +350,20 @@ begin
     Add('  <tr>');
     Add('    <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>My Boards</b></font></td>');
     Add('  </tr>');
-    // IE 3 at Win95 does not support HTML button at all. Buttons are required for accessibility, so it seems it's not possible to support IE 3.
-    // IE 6 at Win2k does work with this button HTML code.
-    // IBrowse does not support image inside of button. FreeDOS Dillo supports it, but better to get image visible at IBrowser, having image outside of button.
-    // FreeDOS Dillo requires image width and height in pixels. Setting it to "auto" produces error.
-    // FreeDOS Dillo requires buttons to be at table from left to right, because without table button width is full page width.
-    // FreeDOS Dillo can not change button background color.
-    // FreeDOS Dillo shows image tooltip. It does not show button tooltip. Tooltip is with alt and aria-label.
-    // IBrowse does not show tooltip at all. Not for image, not for button.
+    // Works with this code:
+    //  - IE6 at Win2k does work with this button HTML code.
+    //  - Amiga IBrowse:
+    //    - Does not support image inside of button.
+    //    - Dot show tooltip at all. Not for image, not for button.  Tooltip is with alt and aria-label.
+    //  - FreeDOS Dillo:
+    //    - Supports image inside of button, but better to get image visible at IBrowser, having image outside of button.
+    //    - Requires image width and height in pixels. Setting it to "auto" produces error.
+    //    - Requires buttons to be at table from left to right, because without table button width is full page width.
+    //    - Can not change button background color.
+    //    - Shows image tooltip. It does not show button tooltip. Tooltip is with alt and aria-label.
+    // Does not support HTML button at all:
+    //  - IE3 at Win95 does not support HTML button at all. Buttons are useful for submit form buttons and accessibility.
+    //  - Netscape at OS/2
     Add('  <tr bgcolor="#2980b9">');
     Add('    <td align="left" valign="top"><button class="js-add-board" title="Add Board" aria-label="Add Board" width="20" href="">Add Board</button></td>');
     Add('    <td align="right" valign="top"><img src="font/star.gif" width="20" height="20" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list."></td>');
