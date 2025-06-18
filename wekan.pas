@@ -341,9 +341,9 @@ begin
     Add('        <font size="3" color="#FFFFFF" face="arial">WeKan ® Open Source Kanban board with MIT license</font></a> &nbsp;&nbsp;&nbsp;');
     Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a> &nbsp;&nbsp;&nbsp;');
     Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">');
-    Add('        <img src="font/arrow/white/arrows.gif" width="20px"> <img src="font/arrow/white/ban.gif" width="20px"></a> &nbsp;&nbsp;&nbsp;');
-    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20px"></a> &nbsp;&nbsp;&nbsp;&nbsp;');
-    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20px"> &nbsp;');
+    Add('        <img src="font/arrow/white/arrows.gif" width="20" height="auto"> <img src="font/arrow/white/ban.gif" width="20" height="auto"></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="auto"></a> &nbsp;&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="auto"> &nbsp;');
     Add('        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>&nbsp;&nbsp;&nbsp;');
     Add('    </td>');
     Add('  </tr>');
