@@ -54,6 +54,22 @@ procedure uploadEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
 procedure translationEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
 procedure jsonEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
 procedure screenInfoEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiUsersLoginEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiUsersRegisterEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiUsersForgotEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiUsersMeEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiUsersProfileEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiBoardsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiListsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiCardsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiCommentsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiAttachmentsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiChecklistsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiActivitiesEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure apiSettingsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure serveStaticFileEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
+procedure screenInfoEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
 procedure serveStaticFileEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
 procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
 // Additional endpoints
@@ -253,6 +269,115 @@ end;
 
 // WebBrowserName function and other procedures remain unchanged...
 
+begin
+// Main program block
+begin
+  Application.Port:=5500;
+  
+  // Initialize language system
+  InitLanguages;
+  
+  // Load default English translations
+  if not LoadTranslations('en') then
+    Writeln('Warning: Failed to load default English translations');
+  
+  // Main page routes
+  HTTPRouter.RegisterRoute('/', rmGet, @allPagesEndpoint);
+  HTTPRouter.RegisterRoute('/sign-in', rmGet, @loginEndpoint);
+  HTTPRouter.RegisterRoute('/sign-up', rmGet, @registerEndpoint);
+  HTTPRouter.RegisterRoute('/forgot-password', rmGet, @forgotPasswordEndpoint);
+  HTTPRouter.RegisterRoute('/allboards', rmGet, @allBoardsEndpoint);
+  HTTPRouter.RegisterRoute('/usersettings', rmGet, @userSettingsEndpoint);
+  HTTPRouter.RegisterRoute('/notifications', rmGet, @notificationsEndpoint);
+  HTTPRouter.RegisterRoute('/public', rmGet, @publicEndpoint);
+  HTTPRouter.RegisterRoute('/board', rmGet, @boardEndpoint);
+  // Board with specific ID
+  HTTPRouter.RegisterRoute('/b/:boardId', rmGet, @boardEndpoint);
+  HTTPRouter.RegisterRoute('/b/:boardId/:slug', rmGet, @boardEndpoint);
+  HTTPRouter.RegisterRoute('/card', rmGet, @cardEndpoint);
+  // Card with specific ID
+  HTTPRouter.RegisterRoute('/b/:boardId/:slug/:cardId', rmGet, @cardEndpoint);
+  HTTPRouter.RegisterRoute('/shortcuts', rmGet, @shortCutsEndpoint);
+  HTTPRouter.RegisterRoute('/templates', rmGet, @templatesEndpoint);
+  HTTPRouter.RegisterRoute('/my-cards', rmGet, @myCardsEndpoint);
+  HTTPRouter.RegisterRoute('/due-cards', rmGet, @dueCardsEndpoint);
+  HTTPRouter.RegisterRoute('/global-search', rmGet, @globalSearchEndpoint);
+  HTTPRouter.RegisterRoute('/broken-cards', rmGet, @brokenCardsEndpoint);
+  HTTPRouter.RegisterRoute('/import', rmGet, @importEndpoint);
+  HTTPRouter.RegisterRoute('/setting', rmGet, @adminSettingEndpoint);
+  HTTPRouter.RegisterRoute('/information', rmGet, @informationEndpoint);
+  HTTPRouter.RegisterRoute('/people', rmGet, @peopleEndpoint);
+  HTTPRouter.RegisterRoute('/admin-reports', rmGet, @adminReportsEndpoint);
+  HTTPRouter.RegisterRoute('/upload', rmGet, @uploadEndpoint);
+  HTTPRouter.RegisterRoute('/upload', rmPost, @uploadEndpoint);
+  HTTPRouter.RegisterRoute('/translation', rmGet, @translationEndpoint);
+  HTTPRouter.RegisterRoute('/json', rmGet, @jsonEndpoint);
+  HTTPRouter.RegisterRoute('/screeninfo', @screenInfoEndpoint);
+  
+  // API endpoints
+  HTTPRouter.RegisterRoute('/api/users/login', rmPost, @apiUsersLoginEndpoint);
+  HTTPRouter.RegisterRoute('/api/users/register', rmPost, @apiUsersRegisterEndpoint);
+  HTTPRouter.RegisterRoute('/api/users/forgot', rmPost, @apiUsersForgotEndpoint);
+  HTTPRouter.RegisterRoute('/api/users/me', rmGet, @apiUsersMeEndpoint);
+  HTTPRouter.RegisterRoute('/api/users/profile', rmGet, @apiUsersProfileEndpoint);
+  HTTPRouter.RegisterRoute('/api/users/profile', rmPut, @apiUsersProfileEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards', rmGet, @apiBoardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards', rmPost, @apiBoardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmGet, @apiBoardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmPut, @apiBoardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmDelete, @apiBoardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists', rmGet, @apiListsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists', rmPost, @apiListsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmGet, @apiListsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmPut, @apiListsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmDelete, @apiListsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards', rmGet, @apiCardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards', rmPost, @apiCardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmGet, @apiCardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmPut, @apiCardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmDelete, @apiCardsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments', rmGet, @apiCommentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments', rmPost, @apiCommentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments/:commentId', rmGet, @apiCommentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments/:commentId', rmPut, @apiCommentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments/:commentId', rmDelete, @apiCommentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments', rmGet, @apiAttachmentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments', rmPost, @apiAttachmentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments/:attachmentId', rmGet, @apiAttachmentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments/:attachmentId', rmDelete, @apiAttachmentsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists', rmGet, @apiChecklistsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists', rmPost, @apiChecklistsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmGet, @apiChecklistsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmPut, @apiChecklistsEndpoint);
+  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmDelete, @apiChecklistsEndpoint);
+  HTTPRouter.RegisterRoute('/api/activities', rmGet, @apiActivitiesEndpoint);
+  HTTPRouter.RegisterRoute('/api/settings', rmGet, @apiSettingsEndpoint);
+  HTTPRouter.RegisterRoute('/api/settings', rmPut, @apiSettingsEndpoint);
+  
+  // Add static file server for files in the public directory
+  // This route should come before the catchall
+  HTTPRouter.RegisterRoute('/*', rmGet, @serveStaticFileEndpoint);
+  
+  // Fallback for any remaining requests
+  HTTPRouter.RegisterRoute('/catchall', rmAll, @catchallEndpoint, true);
+  
+  // Create public directory if it doesn't exist
+  if not DirectoryExists('public') then
+    CreateDir('public');
+    
+  Application.Threaded:=false;
+  Application.Initialize;
+  Writeln('Server is ready at localhost:' + IntToStr(Application.Port));
+  Writeln('Static files are served from the public/ directory');
+  
+  // Initialize languages
+  InitLanguages;
+  
+  // Load default translations
+  LoadTranslations(CurrentLanguage);
+  
+  Application.Run;
+end.
 
 // WebBrowserName function and other procedures remain unchanged...
 
@@ -261,7 +386,6 @@ var
   QueryLang: string;
   RedirectURL: string;
   LangInfo: TJSONObject;
-  LangItemObj: TJSONObject;
   i: Integer;
   IsRTL: Boolean;
 begin
@@ -310,15 +434,14 @@ begin
     begin
       if LanguageInfos[i].Tag <> '' then
       begin
-        LangItemObj := TJSONObject.Create;
-        with LangItemObj do
+        with TJSONObject.Create do
         begin
           Add('tag', LanguageInfos[i].Tag);
           Add('code', LanguageInfos[i].Code);
           Add('name', LanguageInfos[i].Name);
           Add('rtl', LanguageInfos[i].RTL);
+          TJSONArray(LangInfo.Find('availableLanguages')).Add(Self);
         end;
-        TJSONArray(LangInfo.Find('availableLanguages')).Add(LangItemObj);
       end;
     end;
     
@@ -773,8 +896,10 @@ begin
   // Extract board ID from route params if available
   BoardId := '';
   BoardSlug := '';
-  BoardId := aRequest.RouteParams['boardId'];
-  BoardSlug := aRequest.RouteParams['slug'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('slug') >= 0 then
+    BoardSlug := aRequest.RouteParams.Values['slug'];
   
   with aResponse.Contents do
   begin
@@ -984,10 +1109,10 @@ begin
   // Extract board ID and card ID from route params if available
   BoardId := '';
   CardId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
   
   with aResponse.Contents do
   begin
@@ -1593,20 +1718,24 @@ begin
       // Determine content type based on file extension
       FileExt := LowerCase(ExtractFileExt(FilePath));
       
-      // Set content type based on file extension
-      ContentType := 'application/octet-stream';  // Default content type
-      
-      case FileExt of
-        '.html': ContentType := 'text/html';
-        '.css':  ContentType := 'text/css';
-        '.js':   ContentType := 'application/javascript';
-        '.png':  ContentType := 'image/png';
-        '.jpg',
-        '.jpeg': ContentType := 'image/jpeg';
-        '.gif':  ContentType := 'image/gif';
-        '.svg':  ContentType := 'image/svg+xml';
-        '.json': ContentType := 'application/json';
-      end;
+      if FileExt = '.html' then
+        ContentType := 'text/html'
+      else if FileExt = '.css' then
+        ContentType := 'text/css'
+      else if FileExt = '.js' then
+        ContentType := 'application/javascript'
+      else if FileExt = '.png' then
+        ContentType := 'image/png'
+      else if FileExt = '.jpg' or FileExt = '.jpeg' then
+        ContentType := 'image/jpeg'
+      else if FileExt = '.gif' then
+        ContentType := 'image/gif'
+      else if FileExt = '.svg' then
+        ContentType := 'image/svg+xml'
+      else if FileExt = '.json' then
+        ContentType := 'application/json'
+      else
+        ContentType := 'application/octet-stream';
       
       // Open the file
       FileStream := TFileStream.Create(FilePath, fmOpenRead);
@@ -1889,8 +2018,8 @@ var
 begin
   // Extract board ID from path params if present
   BoardId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
   
   case aRequest.Method of
     'GET':
@@ -2033,13 +2162,18 @@ begin
             try
               ResponseObject.Add('$set', BoardDoc.Clone as TJSONObject);
               
-              // Update document and assume success
-              UpdateDocument('boards', BoardId, ResponseObject.AsJSON);
-              
-              aResponse.Code := 200;
-              aResponse.ContentType := 'application/json';
-              aResponse.Content := '{"status": "success", "message": "' + Translate('board-updated') + '"}';
-              
+              if UpdateDocument('boards', BoardId, ResponseObject.AsJSON) then
+              begin
+                aResponse.Code := 200;
+                aResponse.ContentType := 'application/json';
+                aResponse.Content := '{"status": "success", "message": "' + Translate('board-updated') + '"}';
+              end
+              else
+              begin
+                aResponse.Code := 404;
+                aResponse.ContentType := 'application/json';
+                aResponse.Content := '{"status": "error", "message": "' + Translate('error-board-not-found') + '"}';
+              end;
             finally
               ResponseObject.Free;
             end;
@@ -2076,12 +2210,18 @@ begin
         end;
         
         // Delete board
-        DeleteDocument('boards', BoardId);
-        
-        aResponse.Code := 200;
-        aResponse.ContentType := 'application/json';
-        aResponse.Content := '{"status": "success", "message": "' + Translate('board-deleted') + '"}';
-        
+        if DeleteDocument('boards', BoardId) then
+        begin
+          aResponse.Code := 200;
+          aResponse.ContentType := 'application/json';
+          aResponse.Content := '{"status": "success", "message": "' + Translate('board-deleted') + '"}';
+        end
+        else
+        begin
+          aResponse.Code := 404;
+          aResponse.ContentType := 'application/json';
+          aResponse.Content := '{"status": "error", "message": "' + Translate('error-board-not-found') + '"}';
+        end;
         
         aResponse.ContentLength := Length(aResponse.Content);
         aResponse.SendContent;
@@ -2103,10 +2243,10 @@ begin
   // Extract IDs from path params
   BoardId := '';
   ListId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    ListId := aRequest.RouteParams['listId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('listId') >= 0 then
+    ListId := aRequest.RouteParams.Values['listId'];
 
   case aRequest.Method of
     'GET':
@@ -2162,10 +2302,10 @@ begin
   // Extract IDs from path params
   BoardId := '';
   CardId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
 
   case aRequest.Method of
     'GET':
@@ -2222,12 +2362,12 @@ begin
   BoardId := '';
   CardId := '';
   CommentId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
-  
-    CommentId := aRequest.RouteParams['commentId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
+  if aRequest.RouteParams.IndexOfName('commentId') >= 0 then
+    CommentId := aRequest.RouteParams.Values['commentId'];
 
   case aRequest.Method of
     'GET':
@@ -2284,12 +2424,12 @@ begin
   BoardId := '';
   CardId := '';
   AttachmentId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
-  
-    AttachmentId := aRequest.RouteParams['attachmentId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
+  if aRequest.RouteParams.IndexOfName('attachmentId') >= 0 then
+    AttachmentId := aRequest.RouteParams.Values['attachmentId'];
 
   case aRequest.Method of
     'GET':
@@ -2337,12 +2477,12 @@ begin
   BoardId := '';
   CardId := '';
   ChecklistId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
-  
-    ChecklistId := aRequest.RouteParams['checklistId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
+  if aRequest.RouteParams.IndexOfName('checklistId') >= 0 then
+    ChecklistId := aRequest.RouteParams.Values['checklistId'];
 
   case aRequest.Method of
     'GET':
@@ -2409,7 +2549,7 @@ begin
         end
         else
         begin
-          ActivitiesArray := FindDocuments('activities', '{}');
+          ActivitiesArray := FindDocuments('activities', '{}', 50);
         end;
         
         if Assigned(ActivitiesArray) then
@@ -2531,116 +2671,6 @@ var
   SettingsObject: TJSONObject;
   RequestData: TJSONData;
 begin
-  
-  // Initialize language system
-  InitLanguages;
-  
-  // Load default English translations
-  if not LoadTranslations('en') then
-    Writeln('Warning: Failed to load default English translations');
-  
-  // Main page routes
-  HTTPRouter.RegisterRoute('/', rmGet, @allPagesEndpoint);
-  HTTPRouter.RegisterRoute('/sign-in', rmGet, @loginEndpoint);
-  HTTPRouter.RegisterRoute('/sign-up', rmGet, @registerEndpoint);
-  HTTPRouter.RegisterRoute('/forgot-password', rmGet, @forgotPasswordEndpoint);
-  HTTPRouter.RegisterRoute('/allboards', rmGet, @allBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/usersettings', rmGet, @userSettingsEndpoint);
-  HTTPRouter.RegisterRoute('/notifications', rmGet, @notificationsEndpoint);
-  HTTPRouter.RegisterRoute('/public', rmGet, @publicEndpoint);
-  HTTPRouter.RegisterRoute('/board', rmGet, @boardEndpoint);
-  // Board with specific ID
-  HTTPRouter.RegisterRoute('/b/:boardId', rmGet, @boardEndpoint);
-  HTTPRouter.RegisterRoute('/b/:boardId/:slug', rmGet, @boardEndpoint);
-  HTTPRouter.RegisterRoute('/card', rmGet, @cardEndpoint);
-  // Card with specific ID
-  HTTPRouter.RegisterRoute('/b/:boardId/:slug/:cardId', rmGet, @cardEndpoint);
-  HTTPRouter.RegisterRoute('/shortcuts', rmGet, @shortCutsEndpoint);
-  HTTPRouter.RegisterRoute('/templates', rmGet, @templatesEndpoint);
-  HTTPRouter.RegisterRoute('/my-cards', rmGet, @myCardsEndpoint);
-  HTTPRouter.RegisterRoute('/due-cards', rmGet, @dueCardsEndpoint);
-  HTTPRouter.RegisterRoute('/global-search', rmGet, @globalSearchEndpoint);
-  HTTPRouter.RegisterRoute('/broken-cards', rmGet, @brokenCardsEndpoint);
-  HTTPRouter.RegisterRoute('/import', rmGet, @importEndpoint);
-  HTTPRouter.RegisterRoute('/setting', rmGet, @adminSettingEndpoint);
-  HTTPRouter.RegisterRoute('/information', rmGet, @informationEndpoint);
-  HTTPRouter.RegisterRoute('/people', rmGet, @peopleEndpoint);
-  HTTPRouter.RegisterRoute('/admin-reports', rmGet, @adminReportsEndpoint);
-  HTTPRouter.RegisterRoute('/upload', rmGet, @uploadEndpoint);
-  HTTPRouter.RegisterRoute('/upload', rmPost, @uploadEndpoint);
-  HTTPRouter.RegisterRoute('/translation', rmGet, @translationEndpoint);
-  HTTPRouter.RegisterRoute('/json', rmGet, @jsonEndpoint);
-  HTTPRouter.RegisterRoute('/screeninfo', @screenInfoEndpoint);
-  
-  // API endpoints
-  HTTPRouter.RegisterRoute('/api/users/login', rmPost, @apiUsersLoginEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/register', rmPost, @apiUsersRegisterEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/forgot', rmPost, @apiUsersForgotEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/profile', rmGet, @apiProfileEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/profile', rmPut, @apiProfileEndpoint);
-  
-  HTTPRouter.RegisterRoute('/api/boards', rmGet, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards', rmPost, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmGet, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmPut, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmDelete, @apiBoardsEndpoint);
-  
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists', rmGet, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists', rmPost, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmGet, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmPut, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmDelete, @apiListsEndpoint);
-  
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards', rmGet, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards', rmPost, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmGet, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmPut, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmDelete, @apiCardsEndpoint);
-  
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments', rmGet, @apiCommentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments', rmPost, @apiCommentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments/:commentId', rmPut, @apiCommentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments/:commentId', rmDelete, @apiCommentsEndpoint);
-  
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments', rmGet, @apiAttachmentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments', rmPost, @apiAttachmentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments/:attachmentId', rmGet, @apiAttachmentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments/:attachmentId', rmDelete, @apiAttachmentsEndpoint);
-  
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists', rmGet, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists', rmPost, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmGet, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmPut, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmDelete, @apiChecklistsEndpoint);
-  
-  HTTPRouter.RegisterRoute('/api/activities', rmGet, @apiActivitiesEndpoint);
-  HTTPRouter.RegisterRoute('/api/settings', rmGet, @apiSettingsEndpoint);
-  HTTPRouter.RegisterRoute('/api/settings', rmPut, @apiSettingsEndpoint);
-  
-  // Add static file server for files in the public directory
-  // This route should come before the catchall
-  HTTPRouter.RegisterRoute('/*', rmGet, @serveStaticFileEndpoint);
-  
-  // Fallback for any remaining requests
-  HTTPRouter.RegisterRoute('/catchall', rmAll, @catchallEndpoint, true);
-  
-  // Create public directory if it doesn't exist
-  if not DirectoryExists('public') then
-    CreateDir('public');
-    
-  Application.Threaded:=false;
-  Application.Initialize;
-  Writeln('Server is ready at localhost:' + IntToStr(Application.Port));
-  Writeln('Static files are served from the public/ directory');
-  
-  // Initialize languages
-  InitLanguages;
-  
-  // Load default translations
-  LoadTranslations(CurrentLanguage);
-  
-  Application.Run;
-end.
   case aRequest.Method of
     'GET':
       begin
