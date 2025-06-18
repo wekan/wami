@@ -261,7 +261,6 @@ var
   QueryLang: string;
   RedirectURL: string;
   LangInfo: TJSONObject;
-  LangItemObj: TJSONObject;
   i: Integer;
   IsRTL: Boolean;
 begin
@@ -310,7 +309,7 @@ begin
     begin
       if LanguageInfos[i].Tag <> '' then
       begin
-        LangItemObj := TJSONObject.Create;
+        var LangItemObj := TJSONObject.Create;
         with LangItemObj do
         begin
           Add('tag', LanguageInfos[i].Tag);
@@ -984,10 +983,10 @@ begin
   // Extract board ID and card ID from route params if available
   BoardId := '';
   CardId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
   
   with aResponse.Contents do
   begin
@@ -1593,20 +1592,24 @@ begin
       // Determine content type based on file extension
       FileExt := LowerCase(ExtractFileExt(FilePath));
       
-      // Set content type based on file extension
-      ContentType := 'application/octet-stream';  // Default content type
-      
-      case FileExt of
-        '.html': ContentType := 'text/html';
-        '.css':  ContentType := 'text/css';
-        '.js':   ContentType := 'application/javascript';
-        '.png':  ContentType := 'image/png';
-        '.jpg',
-        '.jpeg': ContentType := 'image/jpeg';
-        '.gif':  ContentType := 'image/gif';
-        '.svg':  ContentType := 'image/svg+xml';
-        '.json': ContentType := 'application/json';
-      end;
+      if FileExt = '.html' then
+        ContentType := 'text/html'
+      else if FileExt = '.css' then
+        ContentType := 'text/css'
+      else if FileExt = '.js' then
+        ContentType := 'application/javascript'
+      else if FileExt = '.png' then
+        ContentType := 'image/png'
+      else if FileExt = '.jpg' or FileExt = '.jpeg' then
+        ContentType := 'image/jpeg'
+      else if FileExt = '.gif' then
+        ContentType := 'image/gif'
+      else if FileExt = '.svg' then
+        ContentType := 'image/svg+xml'
+      else if FileExt = '.json' then
+        ContentType := 'application/json'
+      else
+        ContentType := 'application/octet-stream';
       
       // Open the file
       FileStream := TFileStream.Create(FilePath, fmOpenRead);
@@ -1889,8 +1892,8 @@ var
 begin
   // Extract board ID from path params if present
   BoardId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
   
   case aRequest.Method of
     'GET':
@@ -2033,13 +2036,18 @@ begin
             try
               ResponseObject.Add('$set', BoardDoc.Clone as TJSONObject);
               
-              // Update document and assume success
-              UpdateDocument('boards', BoardId, ResponseObject.AsJSON);
-              
-              aResponse.Code := 200;
-              aResponse.ContentType := 'application/json';
-              aResponse.Content := '{"status": "success", "message": "' + Translate('board-updated') + '"}';
-              
+              if UpdateDocument('boards', BoardId, ResponseObject.AsJSON) then
+              begin
+                aResponse.Code := 200;
+                aResponse.ContentType := 'application/json';
+                aResponse.Content := '{"status": "success", "message": "' + Translate('board-updated') + '"}';
+              end
+              else
+              begin
+                aResponse.Code := 404;
+                aResponse.ContentType := 'application/json';
+                aResponse.Content := '{"status": "error", "message": "' + Translate('error-board-not-found') + '"}';
+              end;
             finally
               ResponseObject.Free;
             end;
@@ -2076,12 +2084,18 @@ begin
         end;
         
         // Delete board
-        DeleteDocument('boards', BoardId);
-        
-        aResponse.Code := 200;
-        aResponse.ContentType := 'application/json';
-        aResponse.Content := '{"status": "success", "message": "' + Translate('board-deleted') + '"}';
-        
+        if DeleteDocument('boards', BoardId) then
+        begin
+          aResponse.Code := 200;
+          aResponse.ContentType := 'application/json';
+          aResponse.Content := '{"status": "success", "message": "' + Translate('board-deleted') + '"}';
+        end
+        else
+        begin
+          aResponse.Code := 404;
+          aResponse.ContentType := 'application/json';
+          aResponse.Content := '{"status": "error", "message": "' + Translate('error-board-not-found') + '"}';
+        end;
         
         aResponse.ContentLength := Length(aResponse.Content);
         aResponse.SendContent;
@@ -2103,10 +2117,10 @@ begin
   // Extract IDs from path params
   BoardId := '';
   ListId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    ListId := aRequest.RouteParams['listId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('listId') >= 0 then
+    ListId := aRequest.RouteParams.Values['listId'];
 
   case aRequest.Method of
     'GET':
@@ -2162,10 +2176,10 @@ begin
   // Extract IDs from path params
   BoardId := '';
   CardId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
 
   case aRequest.Method of
     'GET':
@@ -2222,12 +2236,12 @@ begin
   BoardId := '';
   CardId := '';
   CommentId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
-  
-    CommentId := aRequest.RouteParams['commentId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
+  if aRequest.RouteParams.IndexOfName('commentId') >= 0 then
+    CommentId := aRequest.RouteParams.Values['commentId'];
 
   case aRequest.Method of
     'GET':
@@ -2284,12 +2298,12 @@ begin
   BoardId := '';
   CardId := '';
   AttachmentId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
-  
-    AttachmentId := aRequest.RouteParams['attachmentId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
+  if aRequest.RouteParams.IndexOfName('attachmentId') >= 0 then
+    AttachmentId := aRequest.RouteParams.Values['attachmentId'];
 
   case aRequest.Method of
     'GET':
@@ -2337,12 +2351,12 @@ begin
   BoardId := '';
   CardId := '';
   ChecklistId := '';
-  
-    BoardId := aRequest.RouteParams['boardId'];
-  
-    CardId := aRequest.RouteParams['cardId'];
-  
-    ChecklistId := aRequest.RouteParams['checklistId'];
+  if aRequest.RouteParams.IndexOfName('boardId') >= 0 then
+    BoardId := aRequest.RouteParams.Values['boardId'];
+  if aRequest.RouteParams.IndexOfName('cardId') >= 0 then
+    CardId := aRequest.RouteParams.Values['cardId'];
+  if aRequest.RouteParams.IndexOfName('checklistId') >= 0 then
+    ChecklistId := aRequest.RouteParams.Values['checklistId'];
 
   case aRequest.Method of
     'GET':
@@ -2409,7 +2423,7 @@ begin
         end
         else
         begin
-          ActivitiesArray := FindDocuments('activities', '{}');
+          ActivitiesArray := FindDocuments('activities', '{}', 50);
         end;
         
         if Assigned(ActivitiesArray) then
@@ -2606,6 +2620,8 @@ begin
 end;
 
 end.
+begin
+  Application.Port:=5500;
   
   // Initialize language system
   InitLanguages;
