@@ -2531,6 +2531,81 @@ var
   SettingsObject: TJSONObject;
   RequestData: TJSONData;
 begin
+  case aRequest.Method of
+    'GET':
+      begin
+        // Get settings from database
+        SettingsObject := FindOneDocument('settings', '{}');
+        
+        if Assigned(SettingsObject) then
+        begin
+          aResponse.Code := 200;
+          aResponse.ContentType := 'application/json';
+          aResponse.Content := SettingsObject.AsJSON;
+          aResponse.ContentLength := Length(aResponse.Content);
+          aResponse.SendContent;
+          SettingsObject.Free;
+        end
+        else
+        begin
+          // Create default settings
+          SettingsObject := TJSONObject.Create;
+          try
+            SettingsObject.Add('siteName', 'Wekan');
+            SettingsObject.Add('language', 'en');
+            SettingsObject.Add('allowPublicBoards', True);
+            
+            aResponse.Code := 200;
+            aResponse.ContentType := 'application/json';
+            aResponse.Content := SettingsObject.AsJSON;
+            aResponse.ContentLength := Length(aResponse.Content);
+            aResponse.SendContent;
+          finally
+            SettingsObject.Free;
+          end;
+        end;
+      end;
+    'PUT':
+      begin
+        // Update settings
+        try
+          RequestData := GetJSON(aRequest.Content);
+          
+          if Assigned(RequestData) and (RequestData.JSONType = jtObject) then
+          begin
+            // Update settings - in a real app you'd update the database
+            aResponse.Code := 200;
+            aResponse.ContentType := 'application/json';
+            aResponse.Content := '{"status": "success", "message": "' + Translate('settings-updated') + '"}';
+          end
+          else
+          begin
+            aResponse.Code := 400;
+            aResponse.ContentType := 'application/json';
+            aResponse.Content := '{"status": "error", "message": "' + Translate('error-invalid-json') + '"}';
+          end;
+        except
+          on E: Exception do
+          begin
+            aResponse.Code := 400;
+            aResponse.ContentType := 'application/json';
+            aResponse.Content := '{"status": "error", "message": "' + Translate('error-invalid-json') + '"}';
+          end;
+        end;
+        
+        aResponse.ContentLength := Length(aResponse.Content);
+        aResponse.SendContent;
+      end;
+  else
+    aResponse.Code := 405; // Method Not Allowed
+    aResponse.ContentType := 'application/json';
+    aResponse.Content := '{"status": "error", "message": "Method not allowed"}';
+    aResponse.ContentLength := Length(aResponse.Content);
+    aResponse.SendContent;
+  end;
+end;
+
+end.
   
   // Initialize language system
   InitLanguages;
@@ -2640,79 +2715,4 @@ begin
   LoadTranslations(CurrentLanguage);
   
   Application.Run;
-end.
-  case aRequest.Method of
-    'GET':
-      begin
-        // Get settings from database
-        SettingsObject := FindOneDocument('settings', '{}');
-        
-        if Assigned(SettingsObject) then
-        begin
-          aResponse.Code := 200;
-          aResponse.ContentType := 'application/json';
-          aResponse.Content := SettingsObject.AsJSON;
-          aResponse.ContentLength := Length(aResponse.Content);
-          aResponse.SendContent;
-          SettingsObject.Free;
-        end
-        else
-        begin
-          // Create default settings
-          SettingsObject := TJSONObject.Create;
-          try
-            SettingsObject.Add('siteName', 'Wekan');
-            SettingsObject.Add('language', 'en');
-            SettingsObject.Add('allowPublicBoards', True);
-            
-            aResponse.Code := 200;
-            aResponse.ContentType := 'application/json';
-            aResponse.Content := SettingsObject.AsJSON;
-            aResponse.ContentLength := Length(aResponse.Content);
-            aResponse.SendContent;
-          finally
-            SettingsObject.Free;
-          end;
-        end;
-      end;
-    'PUT':
-      begin
-        // Update settings
-        try
-          RequestData := GetJSON(aRequest.Content);
-          
-          if Assigned(RequestData) and (RequestData.JSONType = jtObject) then
-          begin
-            // Update settings - in a real app you'd update the database
-            aResponse.Code := 200;
-            aResponse.ContentType := 'application/json';
-            aResponse.Content := '{"status": "success", "message": "' + Translate('settings-updated') + '"}';
-          end
-          else
-          begin
-            aResponse.Code := 400;
-            aResponse.ContentType := 'application/json';
-            aResponse.Content := '{"status": "error", "message": "' + Translate('error-invalid-json') + '"}';
-          end;
-        except
-          on E: Exception do
-          begin
-            aResponse.Code := 400;
-            aResponse.ContentType := 'application/json';
-            aResponse.Content := '{"status": "error", "message": "' + Translate('error-invalid-json') + '"}';
-          end;
-        end;
-        
-        aResponse.ContentLength := Length(aResponse.Content);
-        aResponse.SendContent;
-      end;
-  else
-    aResponse.Code := 405; // Method Not Allowed
-    aResponse.ContentType := 'application/json';
-    aResponse.Content := '{"status": "error", "message": "Method not allowed"}';
-    aResponse.ContentLength := Length(aResponse.Content);
-    aResponse.SendContent;
-  end;
-end;
-
 end.
