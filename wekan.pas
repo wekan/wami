@@ -8,6 +8,9 @@ uses
   {$ENDIF}
   SysUtils, fphttpapp, HTTPDefs, httproute, Classes; // Add Classes unit
 
+var
+  MongoUrlValue: string;
+
 function WebBrowserName(const UserAgent: string): String;
 // Ubuntu Chrome: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
 // MorphOS IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
@@ -78,6 +81,16 @@ end;
 
 procedure allPagesEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
+  MongoUrlValue := GetEnvironmentVariable('MONGO_URL');
+  if MongoUrlValue <> '' then
+  begin
+    Writeln('MONGO_URL environment variable value:');
+    Writeln(MongoUrlValue);
+  end
+  else
+  begin
+    Writeln('MONGO_URL environment variable not found.');
+  end;
   aResponse.Content := '';
   with aResponse.Contents do
   begin
