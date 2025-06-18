@@ -360,6 +360,42 @@ begin
   aResponse.SendContent;
 end;
 
+procedure notificationsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content := '';
+  with aResponse.Contents do
+  begin
+    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
+    Add('<html><head><title>Notifications</title></head>');
+    Add('<body>');
+    Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable">');
+    Add('    <tr>');
+    Add('      <td colspan="8" valign="top" valign="center" align="left" bgcolor="#2573a7">');
+    Add('        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan ®">&nbsp;&nbsp;&nbsp;<img src="font/arrow/white/home.gif" width="20" height="20">&nbsp;');
+    Add('        <font size="3" color="#FFFFFF" face="arial">All Boards</font>&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license">');
+    Add('        <font size="3" color="#FFFFFF" face="arial">WeKan ® Open Source Kanban board with MIT license</font></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">');
+    Add('        <img src="font/arrow/white/arrows.gif" width="20" height="20"> <img src="font/arrow/white/ban.gif" width="20" height="20"></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a> &nbsp;&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20"> &nbsp;');
+    Add('        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>&nbsp;&nbsp;&nbsp;');
+    Add('      </td>');
+    Add('    </tr>');
+    Add('    <tr>');
+    Add('      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>Notifications</b></font></td>');
+    Add('    </tr>');
+    Add('  </table>');
+    Add('</body>');
+    Add('</html>');
+  end;
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/html';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
 procedure allBoardsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
   aResponse.Content := '';
@@ -1006,6 +1042,7 @@ begin
   HTTPRouter.RegisterRoute('/forgot-password', rmGet, @forgotPasswordEndpoint);
   HTTPRouter.RegisterRoute('/allboards', rmGet, @allBoardsEndpoint);
   HTTPRouter.RegisterRoute('/usersettings', rmGet, @userSettingsEndpoint);
+  HTTPRouter.RegisterRoute('/notifications', rmGet, @notificationsEndpoint);
   HTTPRouter.RegisterRoute('/public', rmGet, @publicEndpoint);
   HTTPRouter.RegisterRoute('/board', rmGet, @boardEndpoint);
 // fm.setRoute(fm.GET "/b/:boardId/:slug/:cardId", card)
