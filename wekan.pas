@@ -325,9 +325,6 @@ begin
 end;
 
 procedure allBoardsEndpoint(aRequest: TRequest; aResponse: TResponse);
-
-
-procedure allPagesEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
   aResponse.Content := '';
   with aResponse.Contents do
