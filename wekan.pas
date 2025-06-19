@@ -6,1675 +6,1049 @@ uses
   {$IFDEF UNIX}
   cthreads, cmem,
   {$ENDIF}
-  SysUtils, fphttpapp, HTTPDefs, httproute, Classes, fpjson, jsonparser, StrUtils, DateUtils, Process;
-
-// MongoDB CLI interaction functions
-function ExecuteMongoshCommand(const Command: string): string; forward;
-function FindDocuments(const Collection, Query: string): TJSONArray; forward;
-function FindOneDocument(const Collection, Query: string): TJSONObject; forward;
-function InsertDocument(const Collection, Document: string): string; forward;
-function UpdateDocument(const Collection, Query, Update: string): string; forward;
-function DeleteDocument(const Collection, Query: string): string; forward;
-
-// Translation-related functions
-function Translate(const Key: string): string; forward;
-function DetectLanguage(AcceptLanguageHeader: string): string; forward;
-function LoadTranslations(const LanguageCode: string): Boolean; forward;
-procedure InitLanguages; forward;
-function IsCurrentLanguageRTL: Boolean; forward;
-procedure SetLanguageFromRequest(aRequest: TRequest); forward;
-function GenerateHtmlHead(const Title: string): string; forward;
-function GenerateHtmlFooter: string; forward;
-function GenerateLanguageSwitcher: string; forward;
-function ExtractCookieValue(const CookieHeader, CookieName: string): string; forward;
-
-// Forward declarations for endpoint procedures
-procedure allPagesEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure loginEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure registerEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure forgotPasswordEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure allBoardsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure userSettingsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure notificationsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure publicEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure boardEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure cardEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure shortCutsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure templatesEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure myCardsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure dueCardsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure globalSearchEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure brokenCardsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure importEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure adminSettingEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure informationEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure peopleEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure adminReportsEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure uploadEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure translationEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure jsonEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure screenInfoEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure serveStaticFileEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse); forward;
-// apiProfileEndpoint implementation provided below
-
-type
-  TTranslation = record
-    Key: string;
-    Value: string;
-  end;
-
-  TLanguageInfo = record
-    Code: string;
-    Tag: string;
-    Name: string;
-    RTL: Boolean;
-  end;
+  SysUtils, fphttpapp, HTTPDefs, httproute, Classes; // Add Classes unit
 
 var
-  MongoUrlValue: string = 'mongodb://localhost:27019/wekan';
-  // Global translation dictionary
-  Translations: array of TTranslation;
-  CurrentLanguage: string = 'en';
-  LanguageInfos: array of TLanguageInfo;
+  MongoUrlValue: string;
 
-// Helper function to extract cookie value from Cookie header
-function ExtractCookieValue(const CookieHeader, CookieName: string): string;
+function WebBrowserName(const UserAgent: string): String;
+// Ubuntu Chrome: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+// MorphOS IBrowse 3.0a: IBrowse/3.0 (Amiga; MorphOS 3.19; Build 30.8 68K)
+// NetSurf 3.11 (28th December 2023): Mozilla/5.0 (X11; Linux) NetSurf/3.11
+// FreeDOS Dillo: Mozilla/4.0 (compatible; Dillo 3.0)
+// Ubuntu Desktop Dillo:  Dillo/3.0.5
+// iPhone: Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Mobile/15E148 Safari/604.1
+// Ubuntu Touch Morph Browser: Mozilla/5.0 (Linux; Ubuntu 24.04 like Android 9) AppleWebKit/537.36 Chrome/87.0.4280.144 Mobile Safari/537.36
+// Ubuntu Desktop Morph Browser: Mozilla/5.0 (Linux; Ubuntu 25.04) AppleWebKit/537.36 Chrome/87.0.4280.144 Safari/537.36
+
 var
-  CookieStart, CookieEnd: Integer;
-  SearchStr: string;
+  BrowserName: String;
 begin
-  Result := '';
-  SearchStr := CookieName + '=';
-  CookieStart := Pos(SearchStr, CookieHeader);
-  
-  if CookieStart > 0 then
+  BrowserName := '';
+  if Pos('IBrowse', UserAgent) > 0 then
   begin
-    CookieStart := CookieStart + Length(SearchStr);
-    CookieEnd := Pos(';', Copy(CookieHeader, CookieStart, Length(CookieHeader)));
-    
-    if CookieEnd = 0 then
-      Result := Copy(CookieHeader, CookieStart, Length(CookieHeader))
-    else
-      Result := Copy(CookieHeader, CookieStart, CookieEnd - 1);
-  end;
-end;
-
-// MongoDB CLI interaction functions
-
-// Execute a command in mongosh and return the JSON output
-function ExecuteMongoshCommand(const Command: string): string;
-var
-  TempScript: string;
-  ScriptFile: TextFile;
-  Process: TProcess;
-  ResultFile: TStringList;
-  BytesRead: LongInt;
-  Buffer: array[0..4095] of Byte;
-  MemStream: TMemoryStream;
-begin
-  // Create a temporary script file
-  TempScript := GetTempFileName + '.js';
-  AssignFile(ScriptFile, TempScript);
-  Rewrite(ScriptFile);
-  try
-    // Write the mongosh command to the script file
-    Writeln(ScriptFile, 'conn = db.getMongo("mongodb://localhost:27019/wekan");');
-    Writeln(ScriptFile, 'result = ' + Command + ';');
-    Writeln(ScriptFile, 'print(JSON.stringify(result));');
-    Writeln(ScriptFile, 'exit;');
-  finally
-    CloseFile(ScriptFile);
-  end;
-  
-  // Execute mongosh directly using TProcess
-  Process := TProcess.Create(nil);
-  MemStream := TMemoryStream.Create;
-  try
-    Process.Executable := 'mongosh';
-    Process.Parameters.Add('--quiet');
-    Process.Parameters.Add('--file');
-    Process.Parameters.Add(TempScript);
-    
-    Process.Options := Process.Options + [poWaitOnExit, poUsePipes];
-    Process.Execute;
-    
-    // Read output
-    repeat
-      BytesRead := Process.Output.Read(Buffer, SizeOf(Buffer));
-      if BytesRead > 0 then
-        MemStream.Write(Buffer, BytesRead);
-    until BytesRead = 0;
-    
-    MemStream.Position := 0;
-    ResultFile := TStringList.Create;
-    try
-      ResultFile.LoadFromStream(MemStream);
-      Result := ResultFile.Text;
-    finally
-      ResultFile.Free;
-    end;
-  finally
-    Process.Free;
-    MemStream.Free;
-    DeleteFile(TempScript);
-  end;
-  
-  // Clean up any newlines and whitespace
-  Result := Trim(Result);
-end;
-
-// Function to find documents in a collection
-function FindDocuments(const Collection, Query: string): TJSONArray;
-var
-  Command, OutputStr: string;
-  JsonData: TJSONData;
-begin
-  Command := 'db.' + Collection + '.find(' + Query + ').toArray()';
-  OutputStr := ExecuteMongoshCommand(Command);
-  
-  try
-    JsonData := GetJSON(OutputStr);
-    if Assigned(JsonData) and (JsonData.JSONType = jtArray) then
-      Result := TJSONArray(JsonData)
-    else
-      Result := TJSONArray.Create;
-  except
-    on E: Exception do
-    begin
-      Writeln('Error parsing JSON result: ' + E.Message);
-      Result := TJSONArray.Create;
-    end;
-  end;
-end;
-
-// Function to find a single document in a collection
-function FindOneDocument(const Collection, Query: string): TJSONObject;
-var
-  Command, OutputStr: string;
-  JsonData: TJSONData;
-begin
-  Command := 'db.' + Collection + '.findOne(' + Query + ')';
-  OutputStr := ExecuteMongoshCommand(Command);
-  
-  try
-    JsonData := GetJSON(OutputStr);
-    if Assigned(JsonData) and (JsonData.JSONType = jtObject) then
-      Result := TJSONObject(JsonData)
-    else
-      Result := TJSONObject.Create;
-  except
-    on E: Exception do
-    begin
-      Writeln('Error parsing JSON result: ' + E.Message);
-      Result := TJSONObject.Create;
-    end;
-  end;
-end;
-
-// Function to insert a document into a collection
-function InsertDocument(const Collection, Document: string): string;
-var
-  Command: string;
-begin
-  Command := 'db.' + Collection + '.insertOne(' + Document + ')';
-  Result := ExecuteMongoshCommand(Command);
-end;
-
-// Function to update a document in a collection
-function UpdateDocument(const Collection, Query, Update: string): string;
-var
-  Command: string;
-begin
-  Command := 'db.' + Collection + '.updateOne(' + Query + ', ' + Update + ')';
-  Result := ExecuteMongoshCommand(Command);
-end;
-
-// Function to delete a document from a collection
-function DeleteDocument(const Collection, Query: string): string;
-var
-  Command: string;
-begin
-  Command := 'db.' + Collection + '.deleteOne(' + Query + ')';
-  Result := ExecuteMongoshCommand(Command);
-end;
-
-// WebBrowserName function and other procedures remain unchanged...
-
-// Implementation of translationEndpoint
-procedure translationEndpoint(aRequest: TRequest; aResponse: TResponse);
-var
-  QueryLang: string;
-  RedirectURL: string;
-  LangInfo: TJSONObject;
-  i: Integer;
-  IsRTL: Boolean;
-begin
-  // Check if a specific language is requested
-  QueryLang := aRequest.QueryFields.Values['lang'];
-  if QueryLang <> '' then
+    BrowserName := 'IBrowse';
+  end
+  else if Pos('NetSurf', UserAgent) > 0 then
   begin
-    // Set the requested language
-    if LoadTranslations(QueryLang) then
+    BrowserName := 'NetSurf';
+  end
+  else if Pos('Dillo', UserAgent) > 0 then
+  begin
+    if Pos('Mozilla', UserAgent) > 0 then
     begin
-      CurrentLanguage := QueryLang;
-      
-      // Set a cookie to remember the language choice
-      aResponse.SetCustomHeader('Set-Cookie', 'wekan_language=' + CurrentLanguage + '; Path=/; Max-Age=31536000');
-      
-      // Check if we have a redirect URL after language change
-      RedirectURL := aRequest.QueryFields.Values['redirect'];
-      if RedirectURL <> '' then
-      begin
-        aResponse.Code := 302; // Found - redirect
-        aResponse.SetCustomHeader('Location', RedirectURL);
-        aResponse.SendContent;
-        Exit;
-      end;
+      BrowserName := 'DilloFreeDOS';
     end
     else
     begin
-      aResponse.Code := 404;
-      aResponse.Content := Format('Language "%s" not found', [QueryLang]);
-      aResponse.ContentType := 'text/plain';
-      aResponse.SendContent;
-      Exit;
-    end;
-  end;
-
-  // Return information about the current language
-  IsRTL := IsCurrentLanguageRTL;
-  LangInfo := TJSONObject.Create;
-  try
-    LangInfo.Add('currentLanguage', CurrentLanguage);
-    LangInfo.Add('isRTL', IsRTL);
-    
-    // List available languages
-    LangInfo.Add('availableLanguages', TJSONArray.Create);
-    for i := 0 to Length(LanguageInfos) - 1 do
+      BrowserName := 'DilloDesktop';
+    end
+  end
+  else if Pos('iPhone', UserAgent) > 0 then
+  begin
+    BrowserName := 'iPhoneSafari';
+  end
+  else if Pos('Ubuntu', UserAgent) > 0 then
+  begin
+    if Pos('Android', UserAgent) > 0 then
     begin
-      if LanguageInfos[i].Tag <> '' then
-      begin
-        with TJSONObject.Create do
-        begin
-          Add('tag', LanguageInfos[i].Tag);
-          Add('code', LanguageInfos[i].Code);
-          Add('name', LanguageInfos[i].Name);
-          Add('rtl', LanguageInfos[i].RTL);
-          // Add the language object to the availableLanguages array
-          TJSONArray(LangInfo.Find('availableLanguages')).Add(TJSONObject(Items[Count-1]));
-        end;
-      end;
-    end;
-    
-    // If it's an API request, return JSON
-    if SameText(aRequest.GetFieldByName('Accept'), 'application/json') or
-       (aRequest.QueryFields.Values['format'] = 'json') then
-    begin
-      aResponse.Content := LangInfo.AsJSON;
-      aResponse.Code := 200;
-      aResponse.ContentType := 'application/json';
-      aResponse.ContentLength := Length(aResponse.Content);
-      aResponse.SendContent;
+      BrowserName := 'UbuntuTouchMorph';
     end
     else
     begin
-      // Otherwise, return a language selection page
-      with aResponse.Contents do
-      begin
-        Add(GenerateHtmlHead(Translate('select-language')));
-        Add('<h1>' + Translate('select-language') + '</h1>');
-        
-        Add('<div class="language-list">');
-        Add('<ul>');
-        for i := 0 to Length(LanguageInfos) - 1 do
-        begin
-          if (LanguageInfos[i].Tag <> '') and (LanguageInfos[i].Name <> '') then
-          begin
-            Add(Format('<li><a href="/translation?lang=%s">%s</a></li>', 
-                      [LanguageInfos[i].Tag, LanguageInfos[i].Name]));
-          end;
-        end;
-        Add('</ul>');
-        Add('</div>');
-        
-        Add(GenerateHtmlFooter);
-      end;
-      
-      aResponse.Code := 200;
-      aResponse.ContentType := 'text/html';
-      aResponse.ContentLength := Length(aResponse.Content);
-      aResponse.SendContent;
-    end;
-  finally
-    LangInfo.Free;
+      BrowserName := 'UbuntuDesktopMorph';
+    end
+  end
+  else if Pos('Chrome', UserAgent) > 0 then
+  begin
+    BrowserName := 'Chrome/Brave';
+  end
+  else
+  begin
+    BrowserName := 'Unknown';
   end;
+  Result := BrowserName;
 end;
 
-// Implementation of endpoint procedures
+procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='This endpoint is not available';
+  aResponse.Code:=404;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
 procedure allPagesEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  SetLanguageFromRequest(aRequest);
-  
+  MongoUrlValue := GetEnvironmentVariable('MONGO_URL');
+  if MongoUrlValue <> '' then
+  begin
+    Writeln('MONGO_URL environment variable value:');
+    Writeln(MongoUrlValue);
+  end
+  else
+  begin
+    Writeln('MONGO_URL environment variable not found.');
+  end;
+  aResponse.Content := '';
   with aResponse.Contents do
   begin
-    Add(GenerateHtmlHead(Translate('app-title')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('app-title') + '</h1>');
-    Add('<p>' + Translate('welcome-message') + '</p>');
-    Add('<ul>');
-    Add('<li><a href="/sign-in">' + Translate('sign-in') + '</a></li>');
-    Add('<li><a href="/sign-up">' + Translate('sign-up') + '</a></li>');
-    Add('</ul>');
-    Add(GenerateHtmlFooter);
+    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
+    Add('<html><head><title>WeKan</title></head><body>');
+    Add('WeKan');
+    Add('<p>Serverside UserAgent: ' + aRequest.UserAgent);
+    Writeln('Serverside UserAgent: ' + aRequest.UserAgent);
+    Add('<p>Detected Browser: ' + WebBrowserName(aRequest.UserAgent) + '</p>');
+    Writeln('Detected Browser: ' + WebBrowserName(aRequest.UserAgent));
+    Add('<p>Serverside IPv4: ' + aRequest.RemoteAddr + '</p>');
+    Writeln('Serverside IPv4: ' + aRequest.RemoteAddr);
+    // New code to show screen width and height
+    Add('<p><noscript><p>Browser does not support Javascript</noscript><script>document.write("Browser supports Javascript");</script>');
+    Add('<p><span id="screenInfo"></span></p>');
+    Add('<script language="JavaScript">');
+    Add('function showBrowserWindowSize() {');
+    Add('  var myWidth = 0, myHeight = 0;');
+    Add('  if (typeof window.innerWidth === "number") {');
+    Add('    myWidth = window.innerWidth;');
+    Add('    myHeight = window.innerHeight;');
+    Add('  } else {');
+    Add('    myWidth = document.documentElement.clientWidth || document.body.clientWidth;');
+    Add('    myHeight = document.documentElement.clientHeight || document.body.clientHeight;');
+    Add('  }');
+    Add('  document.getElementById("screenInfo").innerHTML = "Browser Javascript: window inner size: " + myWidth + " x " + myHeight;');
+    Add('}');
+    Add('window.onload = showBrowserWindowSize;');
+    // Chrome: Shows window size
+    // Netsurf: Supports document.write, but window size: undefined x undefined
+    // IBrowse: Supports document.write, but does not show window size text at all
+    Add('</script>');
+
+    Add('<p><a href=".">All Pages</a> - <a href="multidrag/">Multidrag</a></p>');
+    Add('<p><b>Login</b>: <a href="sign-in">Sign In</a>');
+    Add(' - <a href="sign-up">Sign Up</a>');
+    Add(' - <a href="forgot-password">Forgot Password</a></p>');
+    Add('<p><b>Boards</b>: <a href="allboards">All Boards</a>');
+    Add(' - <a href="public">Public</a> - <a href="/board">Board</a>');
+    Add(' - <a href="shortcuts">Shortcuts</a>');
+    Add(' - <a href="templates">Templates</a></p>');
+    Add('<p><b>Cards</b>: <a href="my-cards">My Cards</a>');
+    Add(' - <a href="due-cards">Due Cards</a>');
+    Add(' - <a href="import">Import</a></p>');
+    Add('<p><b>Upload</b>: <a href="upload">Upload</a></p>');
+    Add('<p><b>Search</b>: <a href="global-search">Global Search</a>');
+    Add('<p><b>Admin</b>: <a href="broken-cards">Broken Cards</a>');
+    Add(' - <a href="setting">Setting</a>');
+    Add(' - <a href="information">Information</a>');
+    Add(' - <a href="people">People</a>');
+    Add(' - <a href="admin-reports">Admin Reports</a>');
+    Add('- <a href="attachments">Attachments</a>');
+    Add(' - <a href="translation">Translation</a></p>');
+    Add('</body></html>');
   end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/html';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure screenInfoEndpoint(aRequest: TRequest; aResponse: TResponse);
+var
+  ScreenWidth, ScreenHeight: string;
+begin
+  ScreenWidth := aRequest.ContentFields.Values['width'];
+  ScreenHeight := aRequest.ContentFields.Values['height'];
+  aResponse.Content := Format('Screen Width: %s, Screen Height: %s', [ScreenWidth, ScreenHeight]);
+  aResponse.ContentType := 'text/plain';
   aResponse.SendContent;
 end;
 
 procedure loginEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  SetLanguageFromRequest(aRequest);
-  
+  aResponse.Content := '';
   with aResponse.Contents do
   begin
-    Add(GenerateHtmlHead(Translate('sign-in')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('sign-in') + '</h1>');
-    Add('<form action="/api/users/login" method="post">');
-    Add('  <div>');
-    Add('    <label for="username">' + Translate('username') + '</label>');
-    Add('    <input type="text" id="username" name="username" required>');
-    Add('  </div>');
-    Add('  <div>');
-    Add('    <label for="password">' + Translate('password') + '</label>');
-    Add('    <input type="password" id="password" name="password" required>');
-    Add('  </div>');
-    Add('  <div>');
-    Add('    <button type="submit">' + Translate('sign-in') + '</button>');
-    Add('  </div>');
-    Add('</form>');
-    Add('<p><a href="/forgot-password">' + Translate('forgot-password') + '</a></p>');
-    Add(GenerateHtmlFooter);
+    Add('<p>&nbsp;&nbsp;&nbsp;</p>');
+    Add('<center>');
+    Add('  <table border="0" padding="0" spacing="0" margin="0">');
+    Add('    <tr>');
+    Add('      <td style="background-color: #f7f7f7;">');
+    Add('        <h1 style="font-size: 140%; padding-top: 10px;');
+    Add('                   padding-left: 20px; padding-bottom: 0px;">');
+    Add('          Login');
+    Add('        </h1>');
+    Add('      </td>');
+    Add('    </tr>');
+    Add('    <tr>');
+    Add('      <td style="padding-top: 20px; padding-left: 20px;');
+    Add('                 padding-right: 20px; background-color: white;">');
+    Add('        <form    role="form"');
+    Add('                 novalidate=""');
+    Add('                 action="sign-in"');
+    Add('                 method="POST">');
+    Add('          <label for="select-authentication">');
+    Add('                 Authentication method</label><br>');
+    Add('          <input type="radio"');
+    Add('                 name="select-authentication"');
+    Add('                 value="password"');
+    Add('                 required>');
+    Add('          <label for="auth-password">Password</label><br>');
+    Add('          <input type="radio"');
+    Add('                 name="select-authentication"');
+    Add('                 value="oauth2">');
+    Add('          <label for="auth-oauth2">OAuth2</label><br>');
+    Add('          <input type="radio"');
+    Add('                 name="select-authentication"');
+    Add('                 value="ldap">');
+    Add('          <label for="auth-ldap">LDAP</label><br><br>');
+    Add('          <label for="at-field-username_and_email">');
+    Add('                 Username or Email</label><br>');
+    Add('          <input type="text" size="41"');
+    Add('                 name="username_or_email"');
+    Add('                 placeholder=""');
+    Add('                 autocapitalize="none"');
+    Add('                 autocorrect="off"');
+    Add('                 required><br><br>');
+    Add('          <label for="at-field-password">Password</label><br />');
+    Add('          <input type="password"');
+    Add('                 size="41"');
+    Add('                 name="password"');
+    Add('                 placeholder=""');
+    Add('                 autocapitalize="none"');
+    Add('                 autocorrect="off"');
+    Add('                 required><br />');
+    Add('          <input type="submit"');
+    Add('                 name="login"');
+    Add('                 value="Login"');
+    Add('       </form>');
+    Add('       <p><a href="sign-up">Register</a></p>');
+    Add('       <p><a href="forgot-password">Forgot password</a></p>');
+    Add('    </td>');
+    Add('  </tr>');
+    Add('  </table>');
+    Add('</center>');
   end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure registerEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('sign-up')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('sign-up') + '</h1>');
-    Add('<form action="/api/users/register" method="post">');
-    Add('  <div>');
-    Add('    <label for="username">' + Translate('username') + '</label>');
-    Add('    <input type="text" id="username" name="username" required>');
-    Add('  </div>');
-    Add('  <div>');
-    Add('    <label for="email">' + Translate('email') + '</label>');
-    Add('    <input type="email" id="email" name="email" required>');
-    Add('  </div>');
-    Add('  <div>');
-    Add('    <label for="password">' + Translate('password') + '</label>');
-    Add('    <input type="password" id="password" name="password" required>');
-    Add('  </div>');
-    Add('  <div>');
-    Add('    <label for="confirm">' + Translate('confirm-password') + '</label>');
-    Add('    <input type="password" id="confirm" name="confirm" required>');
-    Add('  </div>');
-    Add('  <div>');
-    Add('    <button type="submit">' + Translate('sign-up') + '</button>');
-    Add('  </div>');
-    Add('</form>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure forgotPasswordEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('forgot-password')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('forgot-password') + '</h1>');
-    Add('<form action="/api/users/forgot" method="post">');
-    Add('  <div>');
-    Add('    <label for="email">' + Translate('email') + '</label>');
-    Add('    <input type="email" id="email" name="email" required>');
-    Add('  </div>');
-    Add('  <div>');
-    Add('    <button type="submit">' + Translate('reset-password') + '</button>');
-    Add('  </div>');
-    Add('</form>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure allBoardsEndpoint(aRequest: TRequest; aResponse: TResponse);
-var
-  BoardsArray: TJSONArray;
-  i: Integer;
-  BoardObject: TJSONObject;
-  BoardId, BoardTitle, BoardSlug, BoardColor: string;
-  HasBoards: Boolean;
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('all-boards')));
-    Add('<link rel="stylesheet" href="/public/client/components/boards/boardsList.css">');
-    Add('<style>');
-    Add('  .boards-wrapper {');
-    Add('    max-width: 960px;');
-    Add('    margin: 0 auto;');
-    Add('    padding: 20px;');
-    Add('  }');
-    Add('  .boards-gallery {');
-    Add('    display: flex;');
-    Add('    flex-wrap: wrap;');
-    Add('    margin: 0 -10px;');
-    Add('  }');
-    Add('  .board-thumbnail {');
-    Add('    width: calc(33.333% - 20px);');
-    Add('    margin: 10px;');
-    Add('    height: 120px;');
-    Add('    border-radius: 3px;');
-    Add('    color: white;');
-    Add('    padding: 10px;');
-    Add('    display: flex;');
-    Add('    flex-direction: column;');
-    Add('    justify-content: space-between;');
-    Add('    text-decoration: none;');
-    Add('    position: relative;');
-    Add('    overflow: hidden;');
-    Add('  }');
-    Add('  .board-thumbnail-title {');
-    Add('    font-weight: bold;');
-    Add('    font-size: 16px;');
-    Add('    overflow: hidden;');
-    Add('    text-overflow: ellipsis;');
-    Add('    white-space: nowrap;');
-    Add('  }');
-    Add('  .create-board-tile {');
-    Add('    background-color: rgba(9,30,66,.04);');
-    Add('    color: #172b4d;');
-    Add('    display: flex;');
-    Add('    align-items: center;');
-    Add('    justify-content: center;');
-    Add('    cursor: pointer;');
-    Add('  }');
-    Add('  .create-board-tile:hover {');
-    Add('    background-color: rgba(9,30,66,.08);');
-    Add('  }');
-    Add('  @media (max-width: 768px) {');
-    Add('    .board-thumbnail {');
-    Add('      width: calc(50% - 20px);');
-    Add('    }');
-    Add('  }');
-    Add('  @media (max-width: 480px) {');
-    Add('    .board-thumbnail {');
-    Add('      width: calc(100% - 20px);');
-    Add('    }');
-    Add('  }');
-    Add('</style>');
-    Add(GenerateLanguageSwitcher);
-    
-    Add('<div class="boards-wrapper">');
-    Add('<h1>' + Translate('all-boards') + '</h1>');
-    
-    Add('<div class="boards-gallery">');
-    
-    HasBoards := False;
-    
-    // Get all boards
-    BoardsArray := FindDocuments('boards', '{}');
-    if Assigned(BoardsArray) then
-    begin
-      if BoardsArray.Count > 0 then
-        HasBoards := True;
-        
-      for i := 0 to BoardsArray.Count - 1 do
-      begin
-        if BoardsArray.Items[i].JSONType = jtObject then
-        begin
-          BoardObject := TJSONObject(BoardsArray.Items[i]);
-          BoardId := BoardObject.Get('_id', '');
-          BoardTitle := BoardObject.Get('title', '');
-          BoardSlug := BoardObject.Get('slug', '');
-          BoardColor := BoardObject.Get('color', 'rgb(0, 121, 191)');
-          
-          if BoardSlug = '' then
-            BoardSlug := StringReplace(LowerCase(BoardTitle), ' ', '-', [rfReplaceAll]);
-            
-          // Convert color name to RGB if needed
-          if BoardColor = 'belize' then
-            BoardColor := 'rgb(0, 121, 191)'
-          else if BoardColor = 'nephritis' then
-            BoardColor := 'rgb(39, 174, 96)'
-          else if BoardColor = 'pomegranate' then
-            BoardColor := 'rgb(192, 57, 43)'
-          else if BoardColor = 'pumpkin' then
-            BoardColor := 'rgb(211, 84, 0)'
-          else if BoardColor = 'wisteria' then
-            BoardColor := 'rgb(142, 68, 173)';
-          
-          Add('<a href="/b/' + BoardId + '/' + BoardSlug + '" class="board-thumbnail" style="background-color: ' + BoardColor + '">');
-          Add('  <div class="board-thumbnail-title">' + BoardTitle + '</div>');
-          Add('</a>');
-        end;
-      end;
-      BoardsArray.Free;
-    end;
-    
-    // Add Create Board tile
-    Add('<div class="board-thumbnail create-board-tile">');
-    Add('  <div class="board-thumbnail-title">+ ' + Translate('create-board') + '</div>');
-    Add('</div>');
-    
-    Add('</div>'); // End boards gallery
-    
-    if not HasBoards then
-    begin
-      Add('<p>' + Translate('no-boards') + '</p>');
-    end;
-    
-    // Add create board form (hidden by default)
-    Add('<div id="create-board-form" style="display: none; margin-top: 20px;">');
-    Add('  <h2>' + Translate('create-board') + '</h2>');
-    Add('  <form id="new-board-form">');
-    Add('    <div>');
-    Add('      <label for="boardTitle">' + Translate('board-title') + '</label>');
-    Add('      <input type="text" id="boardTitle" name="title" required>');
-    Add('    </div>');
-    Add('    <div>');
-    Add('      <label for="boardColor">' + Translate('board-color') + '</label>');
-    Add('      <select id="boardColor" name="color">');
-    Add('        <option value="rgb(0, 121, 191)">Blue</option>');
-    Add('        <option value="rgb(39, 174, 96)">Green</option>');
-    Add('        <option value="rgb(192, 57, 43)">Red</option>');
-    Add('        <option value="rgb(211, 84, 0)">Orange</option>');
-    Add('        <option value="rgb(142, 68, 173)">Purple</option>');
-    Add('      </select>');
-    Add('    </div>');
-    Add('    <button type="submit">' + Translate('create') + '</button>');
-    Add('    <button type="button" id="cancel-create">' + Translate('cancel') + '</button>');
-    Add('  </form>');
-    Add('</div>');
-    
-    // Add script for board creation form
-    Add('<script>');
-    Add('document.addEventListener("DOMContentLoaded", function() {');
-    Add('  const createBoardTile = document.querySelector(".create-board-tile");');
-    Add('  const createBoardForm = document.getElementById("create-board-form");');
-    Add('  const cancelButton = document.getElementById("cancel-create");');
-    Add('  const newBoardForm = document.getElementById("new-board-form");');
-    Add('  ');
-    Add('  // Show form when clicking on create board tile');
-    Add('  createBoardTile.addEventListener("click", function() {');
-    Add('    createBoardForm.style.display = "block";');
-    Add('  });');
-    Add('  ');
-    Add('  // Hide form when clicking cancel');
-    Add('  cancelButton.addEventListener("click", function() {');
-    Add('    createBoardForm.style.display = "none";');
-    Add('  });');
-    Add('  ');
-    Add('  // Handle form submission');
-    Add('  newBoardForm.addEventListener("submit", function(e) {');
-    Add('    e.preventDefault();');
-    Add('    ');
-    Add('    const boardTitle = this.elements.title.value;');
-    Add('    const boardColor = this.elements.color.value;');
-    Add('    ');
-    Add('    fetch("/api/boards", {');
-    Add('      method: "POST",');
-    Add('      headers: {');
-    Add('        "Content-Type": "application/json"');
-    Add('      },');
-    Add('      body: JSON.stringify({');
-    Add('        title: boardTitle,');
-    Add('        color: boardColor');
-    Add('      })');
-    Add('    })');
-    Add('    .then(response => response.json())');
-    Add('    .then(data => {');
-    Add('      if (data._id) {');
-    Add('        // Redirect to the new board');
-    Add('        const slug = boardTitle.toLowerCase().replace(/\s+/g, "-");');
-    Add('        window.location.href = "/b/" + data._id + "/" + slug;');
-    Add('      }');
-    Add('    })');
-    Add('    .catch(error => {');
-    Add('      console.error("Error:", error);');
-    Add('    });');
-    Add('  });');
-    Add('</script>');
-    
-    Add('</div>'); // End boards wrapper
-    
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure userSettingsEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('user-settings')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('user-settings') + '</h1>');
-    Add('<p>' + Translate('settings-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure notificationsEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('notifications')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('notifications') + '</h1>');
-    Add('<p>' + Translate('notifications-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure publicEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('public-boards')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('public-boards') + '</h1>');
-    Add('<p>' + Translate('public-boards-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure boardEndpoint(aRequest: TRequest; aResponse: TResponse);
-var
-  BoardId, BoardSlug: string;
-  BoardDoc: TJSONObject;
-  ListsArray, CardsArray: TJSONArray;
-  i, j: Integer;
-  ListObject, CardObject: TJSONObject;
-  ListId, ListTitle, CardTitle, CardDescription: string;
-  CardId, CardColor: string;
-  HasBoards: Boolean;
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  // Extract board ID from route params if available
-  BoardId := '';
-  BoardSlug := '';
-  // Get route parameters
-  BoardId := aRequest.RouteParams['boardId'];
-  BoardSlug := aRequest.RouteParams['slug'];
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('board')));
-    Add('<link rel="stylesheet" href="/public/client/components/boards/boardBody.css">');
-    Add('<link rel="stylesheet" href="/public/client/components/lists/list.css">');
-    Add('<link rel="stylesheet" href="/public/client/components/cards/cards.css">');
-    Add('<style>');
-    Add('  .board-wrapper {');
-    Add('    display: flex;');
-    Add('    flex-direction: column;');
-    Add('    height: 100vh;');
-    Add('  }');
-    Add('  .board-header {');
-    Add('    background-color: #026aa7;');
-    Add('    color: #fff;');
-    Add('    padding: 10px;');
-    Add('    display: flex;');
-    Add('    justify-content: space-between;');
-    Add('    align-items: center;');
-    Add('  }');
-    Add('  .board-canvas {');
-    Add('    flex: 1;');
-    Add('    overflow-x: auto;');
-    Add('    padding: 10px;');
-    Add('    display: flex;');
-    Add('    align-items: flex-start;');
-    Add('    background-color: #0079bf;');
-    Add('  }');
-    Add('  .list {');
-    Add('    background-color: #ebecf0;');
-    Add('    border-radius: 3px;');
-    Add('    width: 270px;');
-    Add('    margin-right: 10px;');
-    Add('    padding: 10px;');
-    Add('  }');
-    Add('  .list-header {');
-    Add('    padding: 10px;');
-    Add('    font-weight: bold;');
-    Add('  }');
-    Add('  .card {');
-    Add('    background-color: #fff;');
-    Add('    border-radius: 3px;');
-    Add('    box-shadow: 0 1px 0 rgba(9,30,66,.25);');
-    Add('    margin-bottom: 8px;');
-    Add('    padding: 8px;');
-    Add('    cursor: pointer;');
-    Add('  }');
-    Add('  .add-list {');
-    Add('    background-color: rgba(255, 255, 255, 0.3);');
-    Add('    border-radius: 3px;');
-    Add('    width: 270px;');
-    Add('    padding: 10px;');
-    Add('    color: #fff;');
-    Add('    cursor: pointer;');
-    Add('  }');
-    Add('  .add-card {');
-    Add('    color: #5e6c84;');
-    Add('    padding: 8px;');
-    Add('    cursor: pointer;');
-    Add('  }');
-    Add('  .add-card:hover {');
-    Add('    background-color: rgba(9,30,66,0.08);');
-    Add('    border-radius: 3px;');
-    Add('  }');
-    Add('  .card-color-tag {');
-    Add('    height: 6px;');
-    Add('    border-top-left-radius: 2px;');
-    Add('    border-top-right-radius: 2px;');
-    Add('    margin-bottom: 6px;');
-    Add('  }');
-    Add('</style>');
-    Add(GenerateLanguageSwitcher);
-    
-    Add('<div class="board-wrapper">');
-    
-    // Board header
-    Add('<div class="board-header">');
-    
-    if BoardId <> '' then
-    begin
-      BoardDoc := FindOneDocument('boards', '{ "_id": ObjectId("' + BoardId + '") }');
-      if Assigned(BoardDoc) then
-      begin
-        Add('<h1>' + BoardDoc.Get('title', Translate('board')) + '</h1>');
-      end
-      else
-      begin
-        Add('<h1>' + Translate('board') + '</h1>');
-      end;
-    end
-    else
-    begin
-      Add('<h1>' + Translate('board') + '</h1>');
-    end;
-    
-    Add('<div class="board-header-right">');
-    Add('  <a href="/allboards" class="btn">' + Translate('all-boards') + '</a>');
-    Add('</div>');
-    Add('</div>'); // End board header
-    
-    // Board canvas with lists
-    Add('<div class="board-canvas">');
-    
-    HasBoards := False;
-    
-    if BoardId <> '' then
-    begin
-      // Get lists for this board
-      ListsArray := FindDocuments('lists', '{ "boardId": "' + BoardId + '" }');
-      if Assigned(ListsArray) then
-      begin
-        HasBoards := True;
-        for i := 0 to ListsArray.Count - 1 do
-        begin
-          if ListsArray.Items[i].JSONType = jtObject then
-          begin
-            ListObject := TJSONObject(ListsArray.Items[i]);
-            ListId := ListObject.Get('_id', '');
-            ListTitle := ListObject.Get('title', '');
-            
-            Add('<div class="list">');
-            Add('  <div class="list-header">' + ListTitle + '</div>');
-            
-            // Get cards for this list
-            if ListId <> '' then
-            begin
-              CardsArray := FindDocuments('cards', '{ "listId": "' + ListId + '" }');
-              if Assigned(CardsArray) then
-              begin
-                for j := 0 to CardsArray.Count - 1 do
-                begin
-                  if CardsArray.Items[j].JSONType = jtObject then
-                  begin
-                    CardObject := TJSONObject(CardsArray.Items[j]);
-                    CardId := CardObject.Get('_id', '');
-                    CardTitle := CardObject.Get('title', '');
-                    CardDescription := CardObject.Get('description', '');
-                    CardColor := CardObject.Get('color', '');
-                    
-                    Add('<div class="card" onclick="window.location.href=''/b/' + BoardId + '/' + BoardSlug + '/' + CardId + '''">');
-                    if CardColor <> '' then
-                      Add('  <div class="card-color-tag" style="background-color:' + CardColor + '"></div>');
-                    Add('  <div class="card-title">' + CardTitle + '</div>');
-                    Add('</div>');
-                  end;
-                end;
-                CardsArray.Free;
-              end;
-            end;
-            
-            Add('  <div class="add-card">+ ' + Translate('add-card') + '</div>');
-            Add('</div>'); // End list
-          end;
-        end;
-        ListsArray.Free;
-      end;
-      
-      // Add new list button
-      Add('<div class="add-list">+ ' + Translate('add-list') + '</div>');
-      
-      if Assigned(BoardDoc) then
-        BoardDoc.Free;
-    end;
-    
-    if not HasBoards then
-    begin
-      Add('<p>' + Translate('board-loading') + '</p>');
-    end;
-    
-    Add('</div>'); // End board canvas
-    Add('</div>'); // End board wrapper
-    
-    // Add client-side script for interactivity
-    Add('<script>');
-    Add('document.addEventListener("DOMContentLoaded", function() {');
-    Add('  // Add interactivity here');
-    Add('});');
-    Add('</script>');
-    
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure cardEndpoint(aRequest: TRequest; aResponse: TResponse);
-var
-  BoardId, CardId: string;
-  BoardDoc, CardDoc: TJSONObject;
-  CommentsArray, ChecklistsArray, AttachmentsArray: TJSONArray;
-  i, j: Integer;
-  CommentObject, ChecklistObject, ChecklistItemObject, AttachmentObject: TJSONObject;
-  UserObject: TJSONObject;
-  CommentText, AuthorId, AuthorName, CreatedAt: string;
-  ChecklistTitle, ChecklistItemTitle: string;
-  IsChecked: Boolean;
-  AttachmentName, AttachmentUrl: string;
-  CardTitle, CardDescription: string;
-  HasCard: Boolean;
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  // Extract board ID and card ID from route params if available
-  BoardId := '';
-  CardId := '';
-  // Get route parameters
-  BoardId := aRequest.RouteParams['boardId'];
-  CardId := aRequest.RouteParams['cardId'];
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('card')));
-    Add('<link rel="stylesheet" href="/public/client/components/cards/cardDetails.css">');
-    Add('<style>');
-    Add('  .card-detail-wrapper {');
-    Add('    display: flex;');
-    Add('    flex-direction: column;');
-    Add('    max-width: 800px;');
-    Add('    margin: 20px auto;');
-    Add('    background-color: #f4f5f7;');
-    Add('    border-radius: 3px;');
-    Add('    padding: 20px;');
-    Add('  }');
-    Add('  .card-detail-header {');
-    Add('    display: flex;');
-    Add('    justify-content: space-between;');
-    Add('    align-items: center;');
-    Add('    margin-bottom: 20px;');
-    Add('  }');
-    Add('  .card-detail-data {');
-    Add('    display: flex;');
-    Add('  }');
-    Add('  .card-detail-main {');
-    Add('    flex: 3;');
-    Add('    padding-right: 20px;');
-    Add('  }');
-    Add('  .card-detail-sidebar {');
-    Add('    flex: 1;');
-    Add('  }');
-    Add('  .card-section {');
-    Add('    margin-bottom: 20px;');
-    Add('    background-color: #fff;');
-    Add('    border-radius: 3px;');
-    Add('    padding: 15px;');
-    Add('  }');
-    Add('  .card-description {');
-    Add('    white-space: pre-wrap;');
-    Add('  }');
-    Add('  .comment {');
-    Add('    margin-bottom: 10px;');
-    Add('    padding: 10px;');
-    Add('    background-color: #fff;');
-    Add('    border-radius: 3px;');
-    Add('  }');
-    Add('  .comment-author {');
-    Add('    font-weight: bold;');
-    Add('  }');
-    Add('  .comment-date {');
-    Add('    color: #5e6c84;');
-    Add('    font-size: 0.8em;');
-    Add('  }');
-    Add('  .checklist-item {');
-    Add('    display: flex;');
-    Add('    align-items: center;');
-    Add('    margin-bottom: 5px;');
-    Add('  }');
-    Add('  .attachment {');
-    Add('    display: flex;');
-    Add('    align-items: center;');
-    Add('    padding: 8px;');
-    Add('    margin-bottom: 5px;');
-    Add('    background-color: #f7f7f7;');
-    Add('    border-radius: 3px;');
-    Add('  }');
-    Add('  .attachment-icon {');
-    Add('    margin-right: 10px;');
-    Add('  }');
-    Add('</style>');
-    Add(GenerateLanguageSwitcher);
-    
-    HasCard := False;
-    
-    // Card details
-    if (BoardId <> '') and (CardId <> '') then
-    begin
-      CardDoc := FindOneDocument('cards', '{ "_id": ObjectId("' + CardId + '") }');
-      BoardDoc := FindOneDocument('boards', '{ "_id": ObjectId("' + BoardId + '") }');
-      
-      if Assigned(CardDoc) and Assigned(BoardDoc) then
-      begin
-        HasCard := True;
-        CardTitle := CardDoc.Get('title', Translate('card'));
-        CardDescription := CardDoc.Get('description', '');
-        
-        Add('<div class="card-detail-wrapper">');
-        
-        // Card header
-        Add('<div class="card-detail-header">');
-        Add('  <h1>' + CardTitle + '</h1>');
-        Add('  <a href="/b/' + BoardId + '/' + BoardDoc.Get('slug', '') + '" class="btn">' + 
-             Translate('back-to-board') + ': ' + BoardDoc.Get('title', '') + '</a>');
-        Add('</div>');
-        
-        // Card content - main section and sidebar
-        Add('<div class="card-detail-data">');
-        
-        // Main section - Description, Comments, Checklists
-        Add('<div class="card-detail-main">');
-        
-        // Description
-        Add('<div class="card-section">');
-        Add('  <h3>' + Translate('description') + '</h3>');
-        if CardDescription <> '' then
-          Add('  <div class="card-description">' + CardDescription + '</div>')
-        else
-          Add('  <p><em>' + Translate('no-description') + '</em></p>');
-        Add('</div>');
-        
-        // Comments
-        Add('<div class="card-section">');
-        Add('  <h3>' + Translate('comments') + '</h3>');
-        
-        CommentsArray := FindDocuments('comments', '{ "cardId": "' + CardId + '" }');
-        if Assigned(CommentsArray) and (CommentsArray.Count > 0) then
-        begin
-          for i := 0 to CommentsArray.Count - 1 do
-          begin
-            if CommentsArray.Items[i].JSONType = jtObject then
-            begin
-              CommentObject := TJSONObject(CommentsArray.Items[i]);
-              CommentText := CommentObject.Get('text', '');
-              AuthorId := CommentObject.Get('authorId', '');
-              CreatedAt := CommentObject.Get('createdAt', '');
-              AuthorName := 'Anonymous';
-              
-              // Get author name
-              if AuthorId <> '' then
-              begin
-                UserObject := FindOneDocument('users', '{ "_id": ObjectId("' + AuthorId + '") }');
-                if Assigned(UserObject) then
-                begin
-                  AuthorName := UserObject.Get('username', 'Anonymous');
-                  UserObject.Free;
-                end;
-              end;
-              
-              Add('<div class="comment">');
-              Add('  <div class="comment-author">' + AuthorName + '</div>');
-              Add('  <div class="comment-date">' + CreatedAt + '</div>');
-              Add('  <div class="comment-text">' + CommentText + '</div>');
-              Add('</div>');
-            end;
-          end;
-          CommentsArray.Free;
-        end
-        else
-        begin
-          Add('<p><em>' + Translate('no-comments') + '</em></p>');
-        end;
-        
-        // Add comment form
-        Add('<div class="add-comment">');
-        Add('  <form id="comment-form">');
-        Add('    <textarea name="comment" placeholder="' + Translate('add-comment') + '"></textarea>');
-        Add('    <button type="submit">' + Translate('save') + '</button>');
-        Add('  </form>');
-        Add('</div>');
-        Add('</div>');
-        
-        // Checklists
-        Add('<div class="card-section">');
-        Add('  <h3>' + Translate('checklists') + '</h3>');
-        
-        ChecklistsArray := FindDocuments('checklists', '{ "cardId": "' + CardId + '" }');
-        if Assigned(ChecklistsArray) and (ChecklistsArray.Count > 0) then
-        begin
-          for i := 0 to ChecklistsArray.Count - 1 do
-          begin
-            if ChecklistsArray.Items[i].JSONType = jtObject then
-            begin
-              ChecklistObject := TJSONObject(ChecklistsArray.Items[i]);
-              ChecklistTitle := ChecklistObject.Get('title', 'Checklist');
-              
-              Add('<div class="checklist">');
-              Add('  <h4>' + ChecklistTitle + '</h4>');
-              
-              // Checklist items
-              if ChecklistObject.Find('items') <> nil then
-              begin
-                for j := 0 to TJSONArray(ChecklistObject.Find('items')).Count - 1 do
-                begin
-                  if TJSONArray(ChecklistObject.Find('items')).Items[j].JSONType = jtObject then
-                  begin
-                    ChecklistItemObject := TJSONObject(TJSONArray(ChecklistObject.Find('items')).Items[j]);
-                    ChecklistItemTitle := ChecklistItemObject.Get('title', '');
-                    IsChecked := ChecklistItemObject.Get('isChecked', False);
-                    
-                    Add('<div class="checklist-item">');
-                    Add('  <input type="checkbox" ' + IfThen(IsChecked, 'checked', '') + '>');
-                    Add('  <span>' + ChecklistItemTitle + '</span>');
-                    Add('</div>');
-                  end;
-                end;
-              end;
-              
-              Add('</div>');
-            end;
-          end;
-          ChecklistsArray.Free;
-        end
-        else
-        begin
-          Add('<p><em>' + Translate('no-checklists') + '</em></p>');
-        end;
-        Add('</div>');
-        
-        Add('</div>'); // End main section
-        
-        // Sidebar - Members, Labels, Attachments, Actions
-        Add('<div class="card-detail-sidebar">');
-        
-        // Actions
-        Add('<div class="card-section">');
-        Add('  <h3>' + Translate('actions') + '</h3>');
-        Add('  <ul>');
-        Add('    <li><a href="#" class="action-link">' + Translate('move-card') + '</a></li>');
-        Add('    <li><a href="#" class="action-link">' + Translate('archive') + '</a></li>');
-        Add('    <li><a href="#" class="action-link">' + Translate('delete') + '</a></li>');
-        Add('  </ul>');
-        Add('</div>');
-        
-        // Attachments
-        Add('<div class="card-section">');
-        Add('  <h3>' + Translate('attachments') + '</h3>');
-        
-        AttachmentsArray := FindDocuments('attachments', '{ "cardId": "' + CardId + '" }');
-        if Assigned(AttachmentsArray) and (AttachmentsArray.Count > 0) then
-        begin
-          for i := 0 to AttachmentsArray.Count - 1 do
-          begin
-            if AttachmentsArray.Items[i].JSONType = jtObject then
-            begin
-              AttachmentObject := TJSONObject(AttachmentsArray.Items[i]);
-              AttachmentName := AttachmentObject.Get('name', '');
-              AttachmentUrl := AttachmentObject.Get('url', '');
-              
-              Add('<div class="attachment">');
-              Add('  <div class="attachment-icon">📎</div>');
-              Add('  <a href="' + AttachmentUrl + '" target="_blank">' + AttachmentName + '</a>');
-              Add('</div>');
-            end;
-          end;
-          AttachmentsArray.Free;
-        end
-        else
-        begin
-          Add('<p><em>' + Translate('no-attachments') + '</em></p>');
-        end;
-        
-        // Add attachment form
-        Add('<form action="/api/boards/' + BoardId + '/cards/' + CardId + '/attachments" method="post" enctype="multipart/form-data">');
-        Add('  <input type="file" name="attachment">');
-        Add('  <button type="submit">' + Translate('add-attachment') + '</button>');
-        Add('</form>');
-        Add('</div>');
-        
-        Add('</div>'); // End sidebar
-        
-        Add('</div>'); // End card detail data
-        Add('</div>'); // End card detail wrapper
-        
-        // Add client-side script for interactivity
-        Add('<script>');
-        Add('document.addEventListener("DOMContentLoaded", function() {');
-        Add('  // Handle comment form submission');
-        Add('  document.getElementById("comment-form").addEventListener("submit", function(e) {');
-        Add('    e.preventDefault();');
-        Add('    var commentText = this.elements.comment.value;');
-        Add('    if (commentText) {');
-        Add('      fetch("/api/boards/' + BoardId + '/cards/' + CardId + '/comments", {');
-        Add('        method: "POST",');
-        Add('        headers: {');
-        Add('          "Content-Type": "application/json"');
-        Add('        },');
-        Add('        body: JSON.stringify({ text: commentText })');
-        Add('      })');
-        Add('      .then(response => response.json())');
-        Add('      .then(data => {');
-        Add('        if (data.status === "success") {');
-        Add('          window.location.reload();');
-        Add('        }');
-        Add('      });');
-        Add('    }');
-        Add('  });');
-        Add('</script>');
-        
-        CardDoc.Free;
-        BoardDoc.Free;
-      end;
-    end;
-    
-    if not HasCard then
-    begin
-      Add('<div style="text-align: center; margin-top: 50px;">');
-      Add('  <h1>' + Translate('card') + '</h1>');
-      Add('  <p>' + Translate('card-loading') + '</p>');
-      Add('  <a href="/allboards" class="btn">' + Translate('all-boards') + '</a>');
-      Add('</div>');
-    end;
-    
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure shortCutsEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('shortcuts')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('shortcuts') + '</h1>');
-    Add('<p>' + Translate('shortcuts-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure templatesEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('templates')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('templates') + '</h1>');
-    Add('<p>' + Translate('templates-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure myCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('my-cards')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('my-cards') + '</h1>');
-    Add('<p>' + Translate('my-cards-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure dueCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('due-cards')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('due-cards') + '</h1>');
-    Add('<p>' + Translate('due-cards-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure globalSearchEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('global-search')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('global-search') + '</h1>');
-    Add('<p>' + Translate('search-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure brokenCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('broken-cards')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('broken-cards') + '</h1>');
-    Add('<p>' + Translate('broken-cards-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure importEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('import')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('import') + '</h1>');
-    Add('<p>' + Translate('import-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure adminSettingEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('admin-settings')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('admin-settings') + '</h1>');
-    Add('<p>' + Translate('admin-settings-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure informationEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('information')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('information') + '</h1>');
-    Add('<p>' + Translate('information-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure peopleEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('people')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('people') + '</h1>');
-    Add('<p>' + Translate('people-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure adminReportsEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  SetLanguageFromRequest(aRequest);
-  
-  with aResponse.Contents do
-  begin
-    Add(GenerateHtmlHead(Translate('admin-reports')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('admin-reports') + '</h1>');
-    Add('<p>' + Translate('admin-reports-loading') + '</p>');
-    Add(GenerateHtmlFooter);
-  end;
-  
-  aResponse.Code := 200;
-  aResponse.ContentType := 'text/html';
-  aResponse.ContentLength := Length(aResponse.Content);
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/html';
+  aResponse.ContentLength:=Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure uploadEndpoint(aRequest: TRequest; aResponse: TResponse);
+const
+  UPLOAD_FORM = 
+    '<form action="/upload" method="post" enctype="multipart/form-data">' +
+    '<input type="file" name="file" required>' +
+    '<input type="submit" value="Upload">' +
+    '</form>';
+  BUFFER_SIZE = 16384; // 16KB buffer
+var
+  ContentType: string;
+  UploadStream: TFileStream;
+  Buffer: array[0..BUFFER_SIZE-1] of Byte;
+  BytesRead: Integer;
+  FileName: string;
+  UploadDir: string;
 begin
-  SetLanguageFromRequest(aRequest);
-  
-  if aRequest.Method = 'POST' then
+  if aRequest.Method = 'GET' then
   begin
-    // Handle file upload (to be implemented)
-    aResponse.Code := 200;
-    aResponse.ContentType := 'application/json';
-    aResponse.Content := '{"status": "success", "message": "' + Translate('upload-success') + '"}';
-    aResponse.ContentLength := Length(aResponse.Content);
-    aResponse.SendContent;
-  end
-  else
-  begin
-    // Display upload form
-    with aResponse.Contents do
-    begin
-      Add(GenerateHtmlHead(Translate('upload')));
-      Add(GenerateLanguageSwitcher);
-      Add('<h1>' + Translate('upload') + '</h1>');
-      Add('<form action="/upload" method="post" enctype="multipart/form-data">');
-      Add('  <div>');
-      Add('    <label for="file">' + Translate('select-file') + '</label>');
-      Add('    <input type="file" id="file" name="file" required>');
-      Add('  </div>');
-      Add('  <div>');
-      Add('    <button type="submit">' + Translate('upload') + '</button>');
-      Add('  </div>');
-      Add('</form>');
-      Add(GenerateHtmlFooter);
-    end;
-    
+    // Show upload form
+    aResponse.Content := UPLOAD_FORM;
     aResponse.Code := 200;
     aResponse.ContentType := 'text/html';
     aResponse.ContentLength := Length(aResponse.Content);
     aResponse.SendContent;
+    Exit;
   end;
-end;
 
-procedure jsonEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  // Example JSON endpoint
-  aResponse.Code := 200;
-  aResponse.ContentType := 'application/json';
-  aResponse.Content := '{"status": "success", "message": "' + Translate('api-success') + '"}';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure screenInfoEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  // Simple endpoint to return screen information
-  aResponse.Code := 200;
-  aResponse.ContentType := 'application/json';
-  aResponse.Content := '{"width": 1920, "height": 1080}';
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure serveStaticFileEndpoint(aRequest: TRequest; aResponse: TResponse);
-var
-  FilePath: string;
-  FileStream: TFileStream;
-  ContentType: string;
-  FileExt: string;
-begin
-  // Get the file path from the request path
-  FilePath := 'public' + aRequest.PathInfo;
-  
-  // Remove any query parameters
-  if Pos('?', FilePath) > 0 then
-    FilePath := Copy(FilePath, 1, Pos('?', FilePath) - 1);
-  
-  // Default index file
-  if (FilePath = 'public/') or (FilePath = 'public') then
-    FilePath := 'public/index.html';
-  
-  // Check if the file exists
-  if FileExists(FilePath) then
+  if aRequest.Method = 'POST' then
   begin
+    ContentType := aRequest.ContentType;
+    if Pos('multipart/form-data', ContentType) = 0 then
+    begin
+      aResponse.Code := 400;
+      aResponse.Content := 'Invalid content type';
+      aResponse.SendContent;
+      Exit;  
+    end;
+    
     try
-      // Determine content type based on file extension
-      FileExt := LowerCase(ExtractFileExt(FilePath));
+      // Create uploads directory if it doesn't exist
+      UploadDir := 'uploads';
+      if not DirectoryExists(UploadDir) then
+      begin
+        if not CreateDir(UploadDir) then
+        begin
+          aResponse.Code := 500;
+          aResponse.Content := 'Failed to create upload directory';
+          aResponse.SendContent;
+          Exit;
+        end;
+      end;
+
+      // Parse multipart form data to get filename
+      FileName := ExtractFileName(aRequest.Files[0].FileName);
       
-      if FileExt = '.html' then
-        ContentType := 'text/html'
-      else if FileExt = '.css' then
-        ContentType := 'text/css'
-      else if FileExt = '.js' then
-        ContentType := 'application/javascript'
-      else if FileExt = '.png' then
-        ContentType := 'image/png'
-      else if (FileExt = '.jpg') or (FileExt = '.jpeg') then
-        ContentType := 'image/jpeg'
-      else if FileExt = '.gif' then
-        ContentType := 'image/gif'
-      else if FileExt = '.svg' then
-        ContentType := 'image/svg+xml'
-      else if FileExt = '.json' then
-        ContentType := 'application/json'
-      else
-        ContentType := 'application/octet-stream';
-      
-      // Open the file
-      FileStream := TFileStream.Create(FilePath, fmOpenRead);
+      // Create output file stream
+      UploadStream := TFileStream.Create('uploads/' + FileName, fmCreate);
       try
-        // Set response headers
-        aResponse.ContentType := ContentType;
-        aResponse.ContentStream := FileStream;
-        aResponse.ContentLength := FileStream.Size;
+        // Stream file data in chunks
+        while True do
+        begin
+          BytesRead := aRequest.Files[0].Stream.Read(Buffer, BUFFER_SIZE);
+          if BytesRead = 0 then Break;
+          UploadStream.WriteBuffer(Buffer, BytesRead);
+        end;
+
         aResponse.Code := 200;
-        aResponse.SendContent;
-      except
-        FileStream.Free;
-        aResponse.Code := 500; // Internal Server Error
-        aResponse.Content := 'Error reading file';
-        aResponse.ContentType := 'text/plain';
-        aResponse.ContentLength := Length(aResponse.Content);
-        aResponse.SendContent;
+        aResponse.Content := 'File uploaded successfully';
+      finally
+        UploadStream.Free;
       end;
     except
-      aResponse.Code := 500; // Internal Server Error
-      aResponse.Content := 'Error processing file';
-      aResponse.ContentType := 'text/plain';
-      aResponse.ContentLength := Length(aResponse.Content);
-      aResponse.SendContent;
+      on E: Exception do
+      begin
+        aResponse.Code := 500;
+        aResponse.Content := 'Upload failed: ' + E.Message;
+      end;
     end;
-  end
-  else
-  begin
-    // File not found
-    aResponse.Code := 404;
-    aResponse.Content := 'File not found: ' + FilePath;
+
     aResponse.ContentType := 'text/plain';
     aResponse.ContentLength := Length(aResponse.Content);
     aResponse.SendContent;
   end;
 end;
 
-procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse);
+procedure registerEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  // Catch-all endpoint for unhandled routes
-  aResponse.Code := 404;
-  aResponse.ContentType := 'text/html';
-  
-  SetLanguageFromRequest(aRequest);
-  
+  aResponse.Content:='Register';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure forgotPasswordEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Forgot Password';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure userSettingsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content := '';
   with aResponse.Contents do
   begin
-    Add(GenerateHtmlHead(Translate('page-not-found')));
-    Add(GenerateLanguageSwitcher);
-    Add('<h1>' + Translate('page-not-found') + '</h1>');
-    Add('<p>' + Translate('page-not-found-message') + '</p>');
-    Add('<p><a href="/">' + Translate('go-home') + '</a></p>');
-    Add(GenerateHtmlFooter);
+    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
+    Add('<html><head><title>User Settings</title></head>');
+    Add('<body>');
+    Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable">');
+    Add('    <tr>');
+    Add('      <td colspan="8" valign="top" valign="center" align="left" bgcolor="#2573a7">');
+    Add('        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan ®">&nbsp;&nbsp;&nbsp;<img src="font/arrow/white/home.gif" width="20" height="20">&nbsp;');
+    Add('        <font size="3" color="#FFFFFF" face="arial">All Boards</font>&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license">');
+    Add('        <font size="3" color="#FFFFFF" face="arial">WeKan ® Open Source Kanban board with MIT license</font></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">');
+    Add('        <img src="font/arrow/white/arrows.gif" width="20" height="20"> <img src="font/arrow/white/ban.gif" width="20" height="20"></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a> &nbsp;&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20"> &nbsp;');
+    Add('        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>&nbsp;&nbsp;&nbsp;');
+    Add('      </td>');
+    Add('    </tr>');
+    Add('    <tr>');
+    Add('      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>User Settings</b></font></td>');
+    Add('    </tr>');
+    Add('  </table>');
+    Add('</body>');
+    Add('</html>');
+  end;
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/html';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure notificationsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content := '';
+  with aResponse.Contents do
+  begin
+    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
+    Add('<html><head><title>Notifications</title></head>');
+    Add('<body>');
+    Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable">');
+    Add('    <tr>');
+    Add('      <td colspan="8" valign="top" valign="center" align="left" bgcolor="#2573a7">');
+    Add('        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan ®">&nbsp;&nbsp;&nbsp;<img src="font/arrow/white/home.gif" width="20" height="20">&nbsp;');
+    Add('        <font size="3" color="#FFFFFF" face="arial">All Boards</font>&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license">');
+    Add('        <font size="3" color="#FFFFFF" face="arial">WeKan ® Open Source Kanban board with MIT license</font></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">');
+    Add('        <img src="font/arrow/white/arrows.gif" width="20" height="20"> <img src="font/arrow/white/ban.gif" width="20" height="20"></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a> &nbsp;&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20"> &nbsp;');
+    Add('        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>&nbsp;&nbsp;&nbsp;');
+    Add('      </td>');
+    Add('    </tr>');
+    Add('    <tr>');
+    Add('      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>Notifications</b></font></td>');
+    Add('    </tr>');
+    Add('  </table>');
+    Add('</body>');
+    Add('</html>');
+  end;
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/html';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure allBoardsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content := '';
+  with aResponse.Contents do
+  begin
+    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
+    Add('<html><head><title>WeKan</title></head>');
+    Add('<body>');
+    Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable">');
+    Add('    <tr>');
+    Add('      <td colspan="8" valign="top" valign="center" align="left" bgcolor="#2573a7">');
+    Add('        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan ®">&nbsp;&nbsp;&nbsp;<img src="font/arrow/white/home.gif" width="20" height="20">&nbsp;');
+    Add('        <font size="3" color="#FFFFFF" face="arial">All Boards</font>&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license">');
+    Add('        <font size="3" color="#FFFFFF" face="arial">WeKan ® Open Source Kanban board with MIT license</font></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">');
+    Add('        <img src="font/arrow/white/arrows.gif" width="20" height="20"> <img src="font/arrow/white/ban.gif" width="20" height="20"></a> &nbsp;&nbsp;&nbsp;');
+    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a> &nbsp;&nbsp;&nbsp;&nbsp;');
+    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20"> &nbsp;');
+    Add('        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>&nbsp;&nbsp;&nbsp;');
+    Add('    </td>');
+    Add('  </tr>');
+    Add('  <tr>');
+    Add('    <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>My Boards</b></font></td>');
+    Add('  </tr>');
+    // Works with this code:
+    //  - IE6 at Win2k does work with this button HTML code.
+    //  - Amiga IBrowse:
+    //    - Does not support image inside of button.
+    //    - Dot show tooltip at all. Not for image, not for button.  Tooltip is with alt and aria-label.
+    //  - FreeDOS Dillo:
+    //    - Supports image inside of button, but better to get image visible at IBrowser, having image outside of button.
+    //    - Requires image width and height in pixels. Setting it to "auto" produces error.
+    //    - Requires buttons to be at table from left to right, because without table button width is full page width.
+    //    - Can not change button background color.
+    //    - Shows image tooltip. It does not show button tooltip. Tooltip is with alt and aria-label.
+    // Does not support HTML button at all:
+    //  - IE3 at Win95 does not support HTML button at all. Buttons are useful for submit form buttons and accessibility.
+    //  - Netscape at OS/2
+    Add('  <tr bgcolor="#2980b9">');
+    Add('    <td align="left" valign="top"><button class="js-add-board" title="Add Board" aria-label="Add Board" width="20" href="">Add Board</button></td>');
+    Add('    <td align="right" valign="top"><img src="font/star.gif" width="20" height="20" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list."></td>');
+    Add('    <td align="left" valign="top"><button class="js-star-board" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list." href="#">Star board</button></td>');
+    Add('    <td align="right" valign="top"><img src="font/arrow/white/duplicate.gif" width="20" height="20"  title="Duplicate board" aria-label="Duplicate board"></td>');
+    Add('    <td align="left" valign="top"><button class="js-clone-board" title="Duplicate board" aria-label="Duplicate board" href="#">Duplicate board</button></td>');
+    Add('    <td align="right" valign="top"><img src="font/arrow/white/archive.gif" width="20" height="20" title="Move to Archive" aria-label="Move to Archive"></td>');
+    Add('    <td align="left" valign="top"><button class="js-archive-board" title="Move to Archive" aria-label="Move to Archive" href="#">Archive board</button></td>');
+    Add('    <td><b><font color="#FFFFFF">Teams/Orgs</font></b></td>');
+    Add('  </tr>');
+    Add('</table>');
+    Add('<div class="kanban">');
+    Add('  <div class="column" id="todo">');
+    Add('    <h3>Starred Boards</h3>');
+    Add('     for _, starboard in ipairs(starboards) do');
+    Add('      <div class="card" draggable="true">');
+    Add('        <a href="/b/starboard_id/starboard.slug">');
+    Add('          = starboard.title<br />= starboard.description');
+    Add('        </a>');
+    Add('      </div>');
+    Add('     end ');
+    Add('</div>');
+    Add('<div class="column" id="in-progress">');
+    Add('    <h3>My Boards</h3>');
+    Add('     for _, nostarboard in ipairs(nostarboards) do ');
+    Add('      <div class="card" draggable="true">');
+    Add('        <a href="/b/nostarboard_id/nostarboard_slug">');
+    Add('          = nostarboard.title<br />= nostarboard.description');
+    Add('        </a>');
+    Add('      </div>');
+    Add('     end ');
+    Add('</div>');
+    Add('<div class="column" id="done">');
+    Add('    <h3>Template Boards</h3>');
+    Add('     for _, templateboard in ipairs(templateboards) do ');
+    Add('      <div class="card" draggable="true">');
+    Add('        <a href="/b/templateboard_id/templateboard_slug">');
+    Add('         = templateboard.title<br />= templateboard.description');
+    Add('        </a>');
+    Add('      </div>');
+    Add('     end ');
+    Add('  </div>');
+    Add('</div>');
+    Add('</body>');
+    Add('</html>');
+  end;
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/html';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure publicEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Public';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure boardEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content := '';
+  with aResponse.Contents do
+  begin
+    Add('<style>');
+    Add('  .swimlane { margin-bottom: 20px; }');
+    Add('  .kanban-lists-container {');
+    Add('    display: flex;');
+    Add('    flex-direction: row;');
+    Add('    gap: 20px;');
+    Add('    overflow-x: auto;');
+    Add('  }');
+    Add('  .kanban-list {');
+    Add('    min-width: 250px;');
+    Add('    background: #f4f4f4;');
+    Add('    padding: 10px;');
+    Add('    border-radius: 4px;');
+    Add('  }');
+    Add('  .selected {');
+    Add('    outline: 2px solid #0066ff;');
+    Add('    box-shadow: 0 0 5px rgba(0,102,255,0.5);');
+    Add('  }');
+    Add('  .moving {');
+    Add('    opacity: 0.7;');
+    Add('    background: #e0e0e0;');
+    Add('  }');
+    Add('  .kanban-card {');
+    Add('    background: white;');
+    Add('    padding: 8px;');
+    Add('    margin: 8px 0;');
+    Add('    border-radius: 3px;');
+    Add('    box-shadow: 0 1px 3px rgba(0,0,0,0.12);');
+    Add('    cursor: pointer;');
+    Add('  }');
+    Add('  .card-placeholder {');
+    Add('    border: 2px dashed #ccc;');
+    Add('    background: #f9f9f9;');
+    Add('    height: 30px;');
+    Add('    margin: 8px 0;');
+    Add('  }');
+    Add('  .swimlane-placeholder {');
+    Add('    border: 2px dashed #ccc;');
+    Add('    background: #f9f9f9;');
+    Add('    height: 50px;');
+    Add('    margin-bottom: 20px;');
+    Add('  }');
+    Add('  .kanban-list-title {');
+    Add('    cursor: move;');
+    Add('  }');
+    Add('</style>');
+    Add('<section id="kanban-board" aria-label="Kanban Board" role="region" tabindex="0">');
+    Add('  <h1>Accessible Kanban Board</h1>');
+    Add('  <div class="swimlane" role="region" aria-label="Swimlane 1" tabindex="0" draggable="true">');
+    Add('    <h2>Swimlane 1</h2>');
+    Add('    <div class="kanban-lists-container">');
+    Add('      <div class="kanban-list" role="list" aria-label="List 1" tabindex="0">');
+    Add('        <h3 class="kanban-list-title" draggable="true">List 1</h3>');
+    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card 1</div>');
+    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card 2</div>');
+    Add('      </div>');
+    Add('      <div class="kanban-list" role="list" aria-label="List 2" tabindex="0">');
+    Add('        <h3 class="kanban-list-title" draggable="true">List 2</h3>');
+    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card A</div>');
+    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card B</div>');
+    Add('      </div>');
+    Add('    </div>');
+    Add('  </div>');
+    Add('  <div class="swimlane" role="region" aria-label="Swimlane 2" tabindex="0" draggable="true">');
+    Add('    <h2>Swimlane 2</h2>');
+    Add('    <div class="kanban-lists-container">');
+    Add('      <div class="kanban-list" role="list" aria-label="List 3" tabindex="0">');
+    Add('        <h3 class="kanban-list-title" draggable="true">List 3</h3>');
+    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card 3</div>');
+    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card 4</div>');
+    Add('      </div>');
+    Add('      <div class="kanban-list" role="list" aria-label="List 4" tabindex="0">');
+    Add('        <h3 class="kanban-list-title" draggable="true">List 4</h3>');
+    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card C</div>');
+    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card D</div>');
+    Add('      </div>');
+    Add('    </div>');
+    Add('  </div>');
+    Add('  <script>');
+    Add('    let selectedElement = null;');
+    Add('    let isMoving = false;');
+    Add('    let sourceList = null;');
+    Add('    let placeholder = null;');
+    Add('    let swimlanePlaceholder = null;');
+    Add('');
+    Add('    function handleSelection(e) {');
+    Add('      const card = e.target.closest(".kanban-card");');
+    Add('      if (!card) return;');
+    Add('');
+    Add('      if (e.key === " ") {');
+    Add('        e.preventDefault();');
+    Add('        if (!isMoving) {');
+    Add('          if (selectedElement) {');
+    Add('            selectedElement.classList.remove("selected");');
+    Add('          }');
+    Add('          selectedElement = card;');
+    Add('          sourceList = card.closest(".kanban-list");');
+    Add('          selectedElement.classList.add("selected", "moving");');
+    Add('          selectedElement.setAttribute("aria-grabbed", "true");');
+    Add('          isMoving = true;');
+    Add('          placeholder = document.createElement("div");');
+    Add('          placeholder.className = "card-placeholder";');
+    Add('          card.parentNode.insertBefore(placeholder, card.nextSibling);');
+    Add('        } else {');
+    Add('          completeMove();');
+    Add('        }');
+    Add('      }');
+    Add('    }');
+    Add('');
+    Add('    function completeMove() {');
+    Add('      if (!selectedElement) return;');
+    Add('');
+    Add('      selectedElement.classList.remove("moving", "selected");');
+    Add('      selectedElement.setAttribute("aria-grabbed", "false");');
+    Add('      const targetList = document.activeElement.closest(".kanban-list");');
+    Add('      if (targetList) {');
+    Add('        targetList.insertBefore(selectedElement, placeholder);');
+    Add('        announceMove(sourceList, targetList);');
+    Add('      }');
+    Add('      placeholder.remove();');
+    Add('      isMoving = false;');
+    Add('      sourceList = null;');
+    Add('      placeholder = null;');
+    Add('    }');
+    Add('');
+    Add('    function announceMove(from, to) {');
+    Add('      const announcement = document.createElement("div");');
+    Add('      announcement.setAttribute("role", "alert");');
+    Add('      announcement.setAttribute("aria-live", "polite");');
+    Add('      announcement.textContent = `Card moved from ${from.querySelector("h3").textContent} to ${to.querySelector("h3").textContent}`;');
+    Add('      document.body.appendChild(announcement);');
+    Add('      setTimeout(() => announcement.remove(), 1000);');
+    Add('    }');
+    Add('');
+    Add('    document.addEventListener("keydown", function(e) {');
+    Add('      if (e.key === " ") {');
+    Add('        handleSelection(e);');
+    Add('      }');
+    Add('      ');
+    Add('      if (isMoving) {');
+    Add('        const lists = Array.from(document.querySelectorAll(".kanban-list"));');
+    Add('        const currentList = document.activeElement.closest(".kanban-list");');
+    Add('        const currentIndex = lists.indexOf(currentList);');
+    Add('');
+    Add('        switch(e.key) {');
+    Add('          case "ArrowLeft":');
+    Add('            e.preventDefault();');
+    Add('            if (currentIndex > 0) {');
+    Add('              lists[currentIndex - 1].focus();');
+    Add('            }');
+    Add('            break;');
+    Add('          case "ArrowRight":');
+    Add('            e.preventDefault();');
+    Add('            if (currentIndex < lists.length - 1) {');
+    Add('              lists[currentIndex + 1].focus();');
+    Add('            }');
+    Add('            break;');
+    Add('          case "ArrowUp":');
+    Add('            e.preventDefault();');
+    Add('            if (selectedElement.previousElementSibling && selectedElement.previousElementSibling !== placeholder) {');
+    Add('              selectedElement.parentNode.insertBefore(placeholder, selectedElement.previousElementSibling);');
+    Add('            }');
+    Add('            break;');
+    Add('          case "ArrowDown":');
+    Add('            e.preventDefault();');
+    Add('            if (selectedElement.nextElementSibling) {');
+    Add('              selectedElement.parentNode.insertBefore(placeholder, selectedElement.nextElementSibling.nextSibling);');
+    Add('            }');
+    Add('            break;');
+    Add('          case "Escape":');
+    Add('            e.preventDefault();');
+    Add('            selectedElement.classList.remove("moving", "selected");');
+    Add('            selectedElement.setAttribute("aria-grabbed", "false");');
+    Add('            placeholder.remove();');
+    Add('            isMoving = false;');
+    Add('            break;');
+    Add('        }');
+    Add('      }');
+    Add('    });');
+    Add('');
+    Add('    document.querySelectorAll(".kanban-card").forEach(card => {');
+    Add('      card.setAttribute("draggable", "true");');
+    Add('      card.addEventListener("dragstart", function(e) {');
+    Add('        selectedElement = e.target;');
+    Add('        sourceList = selectedElement.closest(".kanban-list");');
+    Add('        e.dataTransfer.effectAllowed = "move";');
+    Add('        setTimeout(() => selectedElement.classList.add("moving"), 0);');
+    Add('      });');
+    Add('      card.addEventListener("dragend", function() {');
+    Add('        selectedElement.classList.remove("moving");');
+    Add('        selectedElement = null;');
+    Add('        sourceList = null;');
+    Add('      });');
+    Add('    });');
+    Add('');
+    Add('    document.querySelectorAll(".kanban-list").forEach(list => {');
+    Add('      list.addEventListener("dragover", function(e) {');
+    Add('        e.preventDefault();');
+    Add('        e.dataTransfer.dropEffect = "move";');
+    Add('        const afterElement = getDragAfterElement(list, e.clientY);');
+    Add('        if (afterElement == null) {');
+    Add('          list.appendChild(placeholder);');
+    Add('        } else {');
+    Add('          list.insertBefore(placeholder, afterElement);');
+    Add('        }');
+    Add('      });');
+    Add('      list.addEventListener("drop", function(e) {');
+    Add('        e.preventDefault();');
+    Add('        if (selectedElement) {');
+    Add('          list.insertBefore(selectedElement, placeholder);');
+    Add('          announceMove(sourceList, list);');
+    Add('        }');
+    Add('        placeholder.remove();');
+    Add('      });');
+    Add('    });');
+    Add('');
+    Add('    document.querySelectorAll(".swimlane").forEach(swimlane => {');
+    Add('      swimlane.addEventListener("dragstart", function(e) {');
+    Add('        selectedElement = e.target;');
+    Add('        e.dataTransfer.effectAllowed = "move";');
+    Add('        setTimeout(() => selectedElement.classList.add("moving"), 0);');
+    Add('      });');
+    Add('      swimlane.addEventListener("dragend", function() {');
+    Add('        selectedElement.classList.remove("moving");');
+    Add('        selectedElement = null;');
+    Add('      });');
+    Add('      swimlane.addEventListener("dragover", function(e) {');
+    Add('        e.preventDefault();');
+    Add('        e.dataTransfer.dropEffect = "move";');
+    Add('        const afterElement = getDragAfterElement(swimlane.parentNode, e.clientY);');
+    Add('        if (afterElement == null) {');
+    Add('          swimlane.parentNode.appendChild(swimlanePlaceholder);');
+    Add('        } else {');
+    Add('          swimlane.parentNode.insertBefore(swimlanePlaceholder, afterElement);');
+    Add('        }');
+    Add('      });');
+    Add('      swimlane.addEventListener("drop", function(e) {');
+    Add('        e.preventDefault();');
+    Add('        if (selectedElement) {');
+    Add('          swimlane.parentNode.insertBefore(selectedElement, swimlanePlaceholder);');
+    Add('        }');
+    Add('        swimlanePlaceholder.remove();');
+    Add('      });');
+    Add('    });');
+    Add('');
+    Add('    document.querySelectorAll(".kanban-list-title").forEach(title => {');
+    Add('      title.addEventListener("dragstart", function(e) {');
+    Add('        selectedElement = e.target.closest(".kanban-list");');
+    Add('        e.dataTransfer.effectAllowed = "move";');
+    Add('        setTimeout(() => selectedElement.classList.add("moving"), 0);');
+    Add('      });');
+    Add('      title.addEventListener("dragend", function() {');
+    Add('        selectedElement.classList.remove("moving");');
+    Add('        selectedElement = null;');
+    Add('      });');
+    Add('    });');
+    Add('');
+    Add('    function getDragAfterElement(container, y) {');
+    Add('      const draggableElements = [...container.querySelectorAll(".swimlane:not(.moving)")];');
+    Add('');
+    Add('      return draggableElements.reduce((closest, child) => {');
+    Add('        const box = child.getBoundingClientRect();');
+    Add('        const offset = y - box.top - box.height / 2;');
+    Add('        if (offset < 0 && offset > closest.offset) {');
+    Add('          return { offset: offset, element: child };');
+    Add('        } else {');
+    Add('          return closest;');
+    Add('        }');
+    Add('      }, { offset: Number.NEGATIVE_INFINITY }).element;');
+    Add('    }');
+    Add('  </script>');
+    Add('</section>');
+  end;
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/html';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure cardEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Card';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure shortcutsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Shortcuts';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure templatesEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Templates';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure myCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='My Cards';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure dueCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Due Cards';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure globalSearchEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Global Search';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure brokenCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Broken Cards';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure importEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Import';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure adminSettingEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Admin Settings';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure informationEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Information';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure peopleEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='People';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure adminReportsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Admin Reports';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure translationEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='Translation';
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/plain';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure jsonEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content:='{"everything":"great"}';
+  aResponse.Code:=200;
+  aResponse.ContentType:='application/json';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure serveStaticFileEndpoint(aRequest: TRequest; aResponse: TResponse);
+var
+  FilePath: String;
+  FileStream: TFileStream;
+  FileExt: String;
+  MimeType: String;
+  IndexPath: String;
+  RequestPath: String;
+  FullPublicPath: String;
+  NormalizedFilePath: String;
+begin
+  // Security: Check for directory traversal attempts
+  RequestPath := aRequest.PathInfo;
+  if (Pos('..', RequestPath) > 0) or (Pos('/./', RequestPath) > 0) then
+  begin
+    aResponse.Code := 403;
+    aResponse.Content := 'Access denied: Invalid path';
+    aResponse.ContentType := 'text/plain';
+    aResponse.SendContent;
+    Exit;
+  end;
+
+  // Get absolute path to public directory for security checks
+  FullPublicPath := ExpandFileName('public');
+  
+  // Construct path to requested file in public directory
+  FilePath := 'public' + RequestPath;
+  
+  // If the path ends with a directory separator, append 'index.html'
+  if (Length(FilePath) > 0) and (FilePath[Length(FilePath)] = DirectorySeparator) then
+    FilePath := FilePath + 'index.html'
+  // Check if the path is a directory, and if so, look for index.html
+  else if DirectoryExists(FilePath) then
+  begin
+    IndexPath := IncludeTrailingPathDelimiter(FilePath) + 'index.html';
+    if FileExists(IndexPath) then
+      FilePath := IndexPath;
   end;
   
-  aResponse.ContentLength := Length(aResponse.Content);
-  aResponse.SendContent;
+  // Security: Ensure the file is within the public directory
+  NormalizedFilePath := ExpandFileName(FilePath);
+  if (Copy(NormalizedFilePath, 1, Length(FullPublicPath)) <> FullPublicPath) then
+  begin
+    aResponse.Code := 403;
+    aResponse.Content := 'Access denied: Path outside public directory';
+    aResponse.ContentType := 'text/plain';
+    aResponse.SendContent;
+    Exit;
+  end;
+  
+  // Check if file exists
+  if not FileExists(NormalizedFilePath) then
+  begin
+    // If file doesn't exist, let the catchall handle it
+    aResponse.Code := 404;
+    aResponse.Content := 'File not found: ' + aRequest.PathInfo;
+    aResponse.ContentType := 'text/plain';
+    aResponse.SendContent;
+    Exit;
+  end;
+  
+  try
+    // Determine content type based on file extension
+    FileExt := LowerCase(ExtractFileExt(NormalizedFilePath));
+    MimeType := 'application/octet-stream'; // Default MIME type
+    
+    if FileExt = '.html' then
+      MimeType := 'text/html'
+    else if FileExt = '.css' then
+      MimeType := 'text/css'
+    else if FileExt = '.js' then
+      MimeType := 'application/javascript'
+    else if FileExt = '.json' then
+      MimeType := 'application/json'
+    else if FileExt = '.png' then
+      MimeType := 'image/png'
+    else if FileExt = '.jpg' then
+      MimeType := 'image/jpeg'
+    else if FileExt = '.gif' then
+      MimeType := 'image/gif'
+    else if FileExt = '.svg' then
+      MimeType := 'image/svg+xml'
+    else if FileExt = '.ico' then
+      MimeType := 'image/x-icon'
+    else if FileExt = '.txt' then
+      MimeType := 'text/plain';
+      
+    // Open file and send its contents
+    FileStream := TFileStream.Create(FilePath, fmOpenRead or fmShareDenyWrite);
+    try
+      aResponse.ContentStream := FileStream;
+      aResponse.ContentType := MimeType;
+      aResponse.FreeContentStream := True; // Let TResponse free the stream
+      aResponse.SendContent;
+    except
+      on E: Exception do
+      begin
+        FileStream.Free;
+        aResponse.Code := 500;
+        aResponse.Content := 'Error serving file: ' + E.Message;
+        aResponse.ContentType := 'text/plain';
+        aResponse.SendContent;
+      end;
+    end;
+  except
+    on E: Exception do
+    begin
+      aResponse.Code := 500;
+      aResponse.Content := 'Error: ' + E.Message;
+      aResponse.ContentType := 'text/plain';
+      aResponse.SendContent;
+    end;
+  end;
 end;
 
-// Stub implementation for apiProfileEndpoint
-procedure apiProfileEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  aResponse.Code := 501; // Not implemented
-  aResponse.Content := 'Not implemented';
-  aResponse.SendContent;
-end;
+// We maintain a list of redirections to ensure that we don't break old URLs
+// when we change our routing scheme.
+//-- const redirections = {
+//--   '/boards': '/',
+//--   '/boards/:id/:slug': '/b/:id/:slug',
+//--   '/boards/:id/:slug/:cardId': '/b/:id/:slug/:cardId',
+//--  '/import': '/import/trello',
+//--};
+//--        redirect(FlowRouter.path(newPath, context.params));
+//-- set static assets
+//fm.setRoute("/*", "/assets/*")
 
-// Main program block
 begin
   Application.Port:=5500;
-  
-  // Initialize language system
-  InitLanguages;
-  
-  // Load default English translations
-  if not LoadTranslations('en') then
-    Writeln('Warning: Failed to load default English translations');
-  
-  // Main page routes
   HTTPRouter.RegisterRoute('/', rmGet, @allPagesEndpoint);
   HTTPRouter.RegisterRoute('/sign-in', rmGet, @loginEndpoint);
   HTTPRouter.RegisterRoute('/sign-up', rmGet, @registerEndpoint);
@@ -1684,12 +1058,8 @@ begin
   HTTPRouter.RegisterRoute('/notifications', rmGet, @notificationsEndpoint);
   HTTPRouter.RegisterRoute('/public', rmGet, @publicEndpoint);
   HTTPRouter.RegisterRoute('/board', rmGet, @boardEndpoint);
-  // Board with specific ID
-  HTTPRouter.RegisterRoute('/b/:boardId', rmGet, @boardEndpoint);
-  HTTPRouter.RegisterRoute('/b/:boardId/:slug', rmGet, @boardEndpoint);
+// fm.setRoute(fm.GET "/b/:boardId/:slug/:cardId", card)
   HTTPRouter.RegisterRoute('/card', rmGet, @cardEndpoint);
-  // Card with specific ID
-  HTTPRouter.RegisterRoute('/b/:boardId/:slug/:cardId', rmGet, @cardEndpoint);
   HTTPRouter.RegisterRoute('/shortcuts', rmGet, @shortCutsEndpoint);
   HTTPRouter.RegisterRoute('/templates', rmGet, @templatesEndpoint);
   HTTPRouter.RegisterRoute('/my-cards', rmGet, @myCardsEndpoint);
@@ -1707,46 +1077,6 @@ begin
   HTTPRouter.RegisterRoute('/json', rmGet, @jsonEndpoint);
   HTTPRouter.RegisterRoute('/screeninfo', @screenInfoEndpoint);
   
-  // API endpoints
-  HTTPRouter.RegisterRoute('/api/users/login', rmPost, @apiUsersLoginEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/register', rmPost, @apiUsersRegisterEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/forgot', rmPost, @apiUsersForgotEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/me', rmGet, @apiUsersMeEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/profile', rmGet, @apiUsersProfileEndpoint);
-  HTTPRouter.RegisterRoute('/api/users/profile', rmPut, @apiUsersProfileEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards', rmGet, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards', rmPost, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmGet, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmPut, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId', rmDelete, @apiBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists', rmGet, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists', rmPost, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmGet, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmPut, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/lists/:listId', rmDelete, @apiListsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards', rmGet, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards', rmPost, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmGet, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmPut, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId', rmDelete, @apiCardsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments', rmGet, @apiCommentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments', rmPost, @apiCommentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments/:commentId', rmGet, @apiCommentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments/:commentId', rmPut, @apiCommentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/comments/:commentId', rmDelete, @apiCommentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments', rmGet, @apiAttachmentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments', rmPost, @apiAttachmentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments/:attachmentId', rmGet, @apiAttachmentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/attachments/:attachmentId', rmDelete, @apiAttachmentsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists', rmGet, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists', rmPost, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmGet, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmPut, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/boards/:boardId/cards/:cardId/checklists/:checklistId', rmDelete, @apiChecklistsEndpoint);
-  HTTPRouter.RegisterRoute('/api/activities', rmGet, @apiActivitiesEndpoint);
-  HTTPRouter.RegisterRoute('/api/settings', rmGet, @apiSettingsEndpoint);
-  HTTPRouter.RegisterRoute('/api/settings', rmPut, @apiSettingsEndpoint);
-  
   // Add static file server for files in the public directory
   // This route should come before the catchall
   HTTPRouter.RegisterRoute('/*', rmGet, @serveStaticFileEndpoint);
@@ -1762,12 +1092,5 @@ begin
   Application.Initialize;
   Writeln('Server is ready at localhost:' + IntToStr(Application.Port));
   Writeln('Static files are served from the public/ directory');
-  
-  // Initialize languages
-  InitLanguages;
-  
-  // Load default translations
-  LoadTranslations(CurrentLanguage);
-  
   Application.Run;
 end.
