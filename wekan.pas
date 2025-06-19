@@ -20,7 +20,6 @@ function WebBrowserName(const UserAgent: string): String;
 // iPhone: Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Mobile/15E148 Safari/604.1
 // Ubuntu Touch Morph Browser: Mozilla/5.0 (Linux; Ubuntu 24.04 like Android 9) AppleWebKit/537.36 Chrome/87.0.4280.144 Mobile Safari/537.36
 // Ubuntu Desktop Morph Browser: Mozilla/5.0 (Linux; Ubuntu 25.04) AppleWebKit/537.36 Chrome/87.0.4280.144 Safari/537.36
-
 var
   BrowserName: String;
 begin
@@ -68,6 +67,48 @@ begin
     BrowserName := 'Unknown';
   end;
   Result := BrowserName;
+end;
+
+
+// Example: Add(BoardIcon('At touchscreen', 1, 'white', 'blue'));
+function BoardIcon(BoardTitle: String; TabIndex: Integer; Color: String; BackgroundColor: String): String;
+begin
+Result := '<table bgcolor="' + BackgroundColor + '" tabindex="' + TabIndex + '" style="border-collapse: collapse;" width="200"' +
+          ' height="80" border="0" padding="0" spacing="0" id="drag-' + TabIndex + '" class="draggable" border-collapse="collapse">' + LineEnding +
+          '  <tbody>' + LineEnding +
+          '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '      <td width="160" height="40" valign="middle" align="top"><font size="1" color="' + Color + '" face="arial"><b>' + BoardTitle + '</b><p></p></font></td>' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '    </tr>' + LineEnding +
+          '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '      <td width="160" height="20"></td>' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '    </tr>' + LineEnding +
+          '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '      <td width="160" height="20"></td>' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '    </tr>' + LineEnding +
+          '  </tbody>' + LineEnding +
+          '</table>' + LineEnding +
+          '<br>' + LineEnding;
+end;
+
+function DrawLine(X1: Integer; Y1: Integer; X2: Integer; Y2: Integer; Width: Integer; Height: Integer; Color: String; StrokeWidth: String): String;
+begin
+// Color can be for example red or rgb(255,0,0) depending how it's defined
+// Strokewidth usually is 2
+// Example: DrawLine(0,0,270,150,500,210,'red',2);
+Result := '<div class="lines">' + LineEnding +
+          '  <svg width="' + Width + '" height="' + Height + '">' + LineEnding +
+          '    <line x1="' + X1 + '" y1="' + Y1 + '" x2="' + X2 + '" y2="' + Y2 + '" style="stroke:' + color + ';stroke-width:' + StrokeWidth + '" />' + LineEnding +
+          '  </svg>' + LineEnding +
+          '  <v:group coordorigin="' + X1 + ' ' + Y1 + '" coordsize="' + Width + ' ' + Height + '" style="width:' + Width + 'px;height:' + Height + 'px;">' + LineEnding +
+          '    <v:line from="' + X1 + ',' + Y1 + '" to="' + X2 + ',' + Y2 + '" strokecolor="' + Color + '" strokeweight="' + StrokeWidth + 'pt" />' + LineEnding +
+          '  </v:group>' + LineEnding +
+          '</div>' + LineEnding;
 end;
 
 procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse);
@@ -498,60 +539,19 @@ begin
     //                 'silver', 'peachpuff', 'crimson', 'plum', 'darkgreen', 'slateblue', 'magenta', 'gold', 'navy',
     //                 'gray', 'saddlebrown', 'paleturquoise', 'mistyrose', 'indigo']
     //
-    // <table bgcolor="#5e98c2">
-    // blue
-
-    function boardIcon(boardtitle, tabindex, color, bgcolor) {
-     Result := '<table bgcolor="' + bgcolor + '" tabindex="' + tabindex + '" style="border-collapse: collapse;" width="200"' +
-               ' height="80" border="0" padding="0" spacing="0" id="drag-1" class="draggable" border-collapse="collapse">' + LineEnding +
-               '  <tbody>' + LineEnding +
-               '    <tr border="0" padding="0" spacing="0">' + LineEnding +
-               '      <td width="20" height="20"></td>' + LineEnding +
-               '      <td width="160" height="40" valign="middle" align="top"><font size="1" color="' + color + '" face="arial"><b>' + boardtitle + '</b><p></p></font></td>' + LineEnding +
-               '      <td width="20" height="20"></td>' + LineEnding +
-               '    </tr>' + LineEnding +
-               '    <tr border="0" padding="0" spacing="0">' + LineEnding +
-               '      <td width="20" height="20"></td>' + LineEnding +
-               '      <td width="160" height="20"></td>' + LineEnding +
-               '      <td width="20" height="20"></td>' + LineEnding +
-               '    </tr>' + LineEnding +
-               '    <tr border="0" padding="0" spacing="0">' + LineEnding +
-               '      <td width="20" height="20"></td>' + LineEnding +
-               '      <td width="160" height="20"></td>' + LineEnding +
-               '      <td width="20" height="20"></td>' + LineEnding +
-               '    </tr>' + LineEnding +
-               '  </tbody>' + LineEnding +
-               '</table>' + LineEnding +
-               '<br>' + LineEnding);
-
-    // function boardIcon(boardtitle, tabindex, color, bgcolor)
-    Add(boardIcon('At touchscreen', 1, 'white', 'blue'));
-    Add(boardIcon('Drag many at once', 2, 'white', 'green'));
-    Add(boardIcon('Visible at Netsurf', 3, 'white', 'red'));
-    Add(boardIcon('Amiga IBrowse', 4, 'black', 'yellow'));
-    Add(boardIcon('For all browsers', 5, 'white', 'gray'));
-    Add(boardIcon('And all screen sizes', 6, 'white', 'black'));
-    Add(boardIcon('And all OS', 7, 'black', 'cyan'));
-    Add(boardIcon('And CPUs', 8, 'black', 'pink'));
-    Add(boardIcon('At Earth', 9, 'black', 'orange'));
-    Add(boardIcon('And Space', 10, 'black', 'lightblue'));
+    Add(BoardIcon('At touchscreen', 1, 'white', 'blue'));
+    Add(BoardIcon('Drag many at once', 2, 'white', 'green'));
+    Add(BoardIcon('Visible at Netsurf', 3, 'white', 'red'));
+    Add(BoardIcon('Amiga IBrowse', 4, 'black', 'yellow'));
+    Add(BoardIcon('For all browsers', 5, 'white', 'gray'));
+    Add(BoardIcon('And all screen sizes', 6, 'white', 'black'));
+    Add(BoardIcon('And all OS', 7, 'black', 'cyan'));
+    Add(BoardIcon('And CPUs', 8, 'black', 'pink'));
+    Add(BoardIcon('At Earth', 9, 'black', 'orange'));
+    Add(BoardIcon('And Space', 10, 'black', 'lightblue'));
     Add('<br>');
-
-    // Color can be for example red or rgb(255,0,0) depending how it's defined
-    // Strokewidth usually is 2
-    Function drawline(x1, y1, x2, y2, width, height, color, strokewidth) {
-    Result := '<div class="lines">' + LineEnding +
-              '  <svg width="' + width + '" height="' + height + '">' + LineEnding +
-              '    <line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" style="stroke:' + color + ';stroke-width:' + strokewidth + '" />' + LineEnding +
-              '  </svg>' + LineEnding +
-              '  <v:group coordorigin="' + x1 + ' ' + y1 + '" coordsize="' + width + ' ' + height + '" style="width:' + width + 'px;height:' + height + 'px;">' + LineEnding +
-              '    <v:line from="' + x1 + ',' + y1 + '" to="' + x2 + ',' + y2 + '" strokecolor="' + color + '" strokeweight="' + strokewidth + 'pt" />' + LineEnding +
-              '  </v:group>' + LineEnding + 
-              '</div>' + LineEnding;
-    };
-    drawline(0,0,270,150,
-
-    Add('<script src="multidrag/js/interact-bottom.js"></script>
+    Add(DrawLine(0,0,270,150,500,210,'red',2));
+    Add('<script src="multidrag/js/interact-bottom.js"></script>');
     Add('</body>');
     Add('</html>');
   end;
