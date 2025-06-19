@@ -510,257 +510,43 @@ begin
                '      <td width="160" height="40" valign="middle" align="top"><font size="1" color="' + color + '" face="arial"><b>' + boardtitle + '</b><p></p></font></td>' + LineEnding +
                '      <td width="20" height="20"></td>' + LineEnding +
                '    </tr>' + LineEnding +
-               '    <tr border="0" padding="0" spacing="0">');
-    Add('      <td width="20" height="20"></td>');
-    Add('      <td width="160" height="20"></td>');
-    Add('      <td width="20" height="20"></td>');
-    Add('    </tr>
-    Add('    <tr border="0" padding="0" spacing="0">');
-    Add('      <td width="20" height="20"></td>');
-    Add('      <td width="160" height="20"></td>');
-    Add('      <td width="20" height="20"></td>');
-    Add('    </tr>');
-    Add('  </tbody>');
-    Add('</table>');
+               '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+               '      <td width="20" height="20"></td>' + LineEnding +
+               '      <td width="160" height="20"></td>' + LineEnding +
+               '      <td width="20" height="20"></td>' + LineEnding +
+               '    </tr>' + LineEnding +
+               '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+               '      <td width="20" height="20"></td>' + LineEnding +
+               '      <td width="160" height="20"></td>' + LineEnding +
+               '      <td width="20" height="20"></td>' + LineEnding +
+               '    </tr>' + LineEnding +
+               '  </tbody>' + LineEnding +
+               '</table>' + LineEnding +
+               '<br>' + LineEnding);
+
+    // function boardIcon(boardtitle, tabindex, color, bgcolor)
+    Add(boardIcon('At touchscreen', 1, 'white', 'blue'));
+    Add(boardIcon('Drag many at once', 2, 'white', 'green'));
+    Add(boardIcon('Visible at Netsurf', 3, 'white', 'red'));
+    Add(boardIcon('Amiga IBrowse', 4, 'black', 'yellow'));
+    Add(boardIcon('For all browsers', 5, 'white', 'gray'));
+    Add(boardIcon('And all screen sizes', 6, 'white', 'black'));
+    Add(boardIcon('And all OS', 7, 'black', 'cyan'));
+    Add(boardIcon('And CPUs', 8, 'black', 'pink'));
+    Add(boardIcon('At Earth', 9, 'black', 'orange'));
+    Add(boardIcon('And Space', 10, 'black', 'lightblue'));
     Add('<br>');
 
-
-    Add('<table bgcolor="green" tabindex="2" style="border-collapse: collapse;" width="200" height="80" border="0" padding="0" spacing="0" id="drag-2" class="draggable" border-collapse="collapse">');
-    Add('  <tbody>');
-    Add('    <tr border="0" padding="0" spacing="0">');
-    Add('      <td width="20" height="20"></td>');
-    Add('      <td width="160" height="40" valign="middle" align="top"><font size="1" color="white" face="arial"><b>Drag many at once</b><p></p></font></td>');
-    Add('      <td width="20" height="20"></td>');
-    Add('    </tr>');
-    Add('    <tr border="0" padding="0" spacing="0">');
-    Add('      <td width="20" height="20"></td>');
-    Add('      <td width="160" height="20"></td>');
-    Add('      <td width="20" height="20"></td>');
-    Add('    </tr>');
-    Add('    <tr border="0" padding="0" spacing="0">');
-    Add('      <td width="20" height="20"></td>');
-    Add('      <td width="160" height="20"></td>');
-    <td width="20" height="20"></td>
-  </tr>
-</tbody></table>
-
-<br>
-
-<table bgcolor="red" tabindex="3" style="border-collapse: collapse;" width="200" height="80"
- border="0" padding="0" spacing="0" id="drag-3" class="draggable" border-collapse="collapse">
-  <tbody><tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="40" valign="middle" align="top">
-      <font size="1" color="white" face="arial">
-        <b>Visible at Netsurf</b>
-        <p></p></font>
-    </td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-</tbody></table>
-
-<br>
-
-<table bgcolor="yellow" tabindex="4" style="border-collapse: collapse;" width="200" height="80"
- border="0" padding="0" spacing="0" id="drag-4" class="draggable" border-collapse="collapse">
-  <tbody><tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="40" valign="middle" align="top">
-      <font size="1" color="black" face="arial">
-        <b>and Amiga IBrowse</b>
-        <p></p></font>
-    </td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-</tbody>
-</table>
-
-<br>
-
-<table bgcolor="gray" tabindex="5" style="border-collapse: collapse;" width="200" height="80"
- border="0" padding="0" spacing="0" id="drag-5" class="draggable" border-collapse="collapse">
-  <tbody><tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="40" valign="middle" align="top">
-      <font size="1" color="white" face="arial">
-        <b>For all browsers</b>
-        <p></p></font>
-    </td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-</tbody>
-</table>
-
-<br>
-
-<table bgcolor="black" tabindex="6" style="border-collapse: collapse;" width="200" height="80"
- border="0" padding="0" spacing="0" id="drag-6" class="draggable" border-collapse="collapse">
-  <tbody><tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="40" valign="middle" align="top">
-      <font size="1" color="white" face="arial">
-        <b>And all screen sizes</b>
-        <p></p></font>
-    </td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-</tbody>
-</table>
-
-<br>
-
-<table bgcolor="cyan" tabindex="7" style="border-collapse: collapse;" width="200" height="80"
- border="0" padding="0" spacing="0" id="drag-7" class="draggable" border-collapse="collapse">
-  <tbody><tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="40" valign="middle" align="top">
-      <font size="1" color="black" face="arial">
-        <b>And all OS</b>
-        <p></p></font>
-    </td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-</tbody>
-</table>
-
-<br>
-
-<table bgcolor="pink" tabindex="8" style="border-collapse: collapse;" width="200" height="80"
- border="0" padding="0" spacing="0" id="drag-8" class="draggable" border-collapse="collapse">
-  <tbody><tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="40" valign="middle" align="top">
-      <font size="1" color="black" face="arial">
-        <b>And CPUs</b>
-        <p></p></font>
-    </td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-</tbody>
-</table>
-
-<br>
-
-<table bgcolor="orange" tabindex="9" style="border-collapse: collapse;" width="200" height="80"
- border="0" padding="0" spacing="0" id="drag-9" class="draggable" border-collapse="collapse">
-  <tbody><tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="40" valign="middle" align="top">
-      <font size="1" color="black" face="arial">
-        <b>At Earth</b>
-        <p></p></font>
-    </td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-</tbody>
-</table>
-
-<br>
-
-<table bgcolor="lightblue" tabindex="10" style="border-collapse: collapse;" width="200" height="80"
- border="0" padding="0" spacing="0" id="drag-10" class="draggable" border-collapse="collapse">
-  <tbody><tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="40" valign="middle" align="top">
-      <font size="1" color="black" face="arial">
-        <b>And Space</b>
-        <p></p></font>
-    </td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-  <tr border="0" padding="0" spacing="0">
-    <td width="20" height="20"></td>
-    <td width="160" height="20"></td>
-    <td width="20" height="20"></td>
-  </tr>
-</tbody>
-</table>
-
-<br>
-
-<div class="redlines">
-  <svg height="210" width="500">
-    <line x1="0" y1="0" x2="270" y2="150" style="stroke:rgb(255,0,0);stroke-width:2" />
-  </svg>
-  <v:group coordorigin="0 0" coordsize="500 210" style="width:500px;height:210px;">
-    <v:line from="0,0" to="270,150" strokecolor="red" strokeweight="2pt" />
-  </v:group>  
-</div>
+    Function drawline(x1, y1, x2, y2, width, height, color) {
+    Result := '<div class="lines">' + LineEnding +
+              '<svg height="210" width="500">' + LineEnding +
+              '  <line x1="0" y1="0" x2="270" y2="150" style="stroke:rgb(255,0,0);stroke-width:2" />' + LineEnding +
+              '</svg>' + LineEnding +
+              '<v:group coordorigin="0 0" coordsize="500 210" style="width:500px;height:210px;">' + LineEnding +
+              '  <v:line from="0,0" to="270,150" strokecolor="red" strokeweight="2pt" />' + LineEnding +
+              '</v:group>' + LineEnding + 
+              '</div>' + LineEnding;
+    };
 
     Add('<script src="multidrag/js/interact-bottom.js"></script>
     Add('</body>');
