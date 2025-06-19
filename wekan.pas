@@ -537,16 +537,19 @@ begin
     Add(boardIcon('And Space', 10, 'black', 'lightblue'));
     Add('<br>');
 
-    Function drawline(x1, y1, x2, y2, width, height, color) {
+    // Color can be for example red or rgb(255,0,0) depending how it's defined
+    // Strokewidth usually is 2
+    Function drawline(x1, y1, x2, y2, width, height, color, strokewidth) {
     Result := '<div class="lines">' + LineEnding +
-              '<svg height="210" width="500">' + LineEnding +
-              '  <line x1="0" y1="0" x2="270" y2="150" style="stroke:rgb(255,0,0);stroke-width:2" />' + LineEnding +
-              '</svg>' + LineEnding +
-              '<v:group coordorigin="0 0" coordsize="500 210" style="width:500px;height:210px;">' + LineEnding +
-              '  <v:line from="0,0" to="270,150" strokecolor="red" strokeweight="2pt" />' + LineEnding +
-              '</v:group>' + LineEnding + 
+              '  <svg width="' + width + '" height="' + height + '">' + LineEnding +
+              '    <line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" style="stroke:' + color + ';stroke-width:' + strokewidth + '" />' + LineEnding +
+              '  </svg>' + LineEnding +
+              '  <v:group coordorigin="' + x1 + ' ' + y1 + '" coordsize="' + width + ' ' + height + '" style="width:' + width + 'px;height:' + height + 'px;">' + LineEnding +
+              '    <v:line from="' + x1 + ',' + y1 + '" to="' + x2 + ',' + y2 + '" strokecolor="' + color + '" strokeweight="' + strokewidth + 'pt" />' + LineEnding +
+              '  </v:group>' + LineEnding + 
               '</div>' + LineEnding;
     };
+    drawline(0,0,270,150,
 
     Add('<script src="multidrag/js/interact-bottom.js"></script>
     Add('</body>');
