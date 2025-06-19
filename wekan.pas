@@ -419,22 +419,32 @@ begin
   with aResponse.Contents do
   begin
     Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
-    Add('<html><head><title>WeKan</title></head>');
+    Add('<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">');
+    Add('<head>');
+    Add('<title>WeKan</title>');
+    Add('<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">');
+    Add('<meta name="viewport" content="maximum-scale=1.0,width=device-width">');
+    Add('<meta http-equiv="X-UA-Compatible" content="IE=edge">');
+    Add('<meta name="application-name" content="WeKan">');
+    Add('<meta name="msapplication-TileColor" content="#00aba9">');
+    Add('<meta name="theme-color" content="#fff">');
+    Add('<link rel="stylesheet" type="text/css" href="multidrag/css/interact.css">');
+    Add('<script src="multidrag/js/interact.js"></script>
+    Add('</head>');
     Add('<body>');
     Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable"  bgcolor="#2573a7">');
     Add('    <tr>');
     Add('      <td colspan="8" align="left" valign="middle">');
-    Add('        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan">');
-    Add('        <img src="font/arrow/white/home.gif" width="20" height="20"><font size="3" color="#FFFFFF" face="arial">All Boards</font>');
+    Add('        <img src="images/logo-header.png" alt="WeKan" title="WeKan">&nbsp;');
+    Add('        <a href="#"><img src="font/arrow/white/home.gif" width="20"><font size="3" color="#FFFFFF" face="arial">All Boards</font></a>&nbsp;');
     Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles"> ');
-    Add('          <img src="font/arrow/white/arrows.gif" width="20" height="20"> <img src="font/arrow/white/ban.gif" width="20" height="20">');
-    Add('        </a> ');
+    Add('          <img src="font/arrow/white/arrows.gif" width="20" height="20"><img src="font/arrow/white/ban.gif" width="20" height="20"> ');
+    Add('        </a>&nbsp;');
     Add('        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license"><font size="3" color="#FFFFFF" face="arial">WeKan Open Source Kanban board with MIT license</font></a>');
     Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a>');
-    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a>');
-    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20">');
-    Add('          <font size="3" color="#FFFFFF" face="arial">User Name</font>');
-    Add('        </a>');
+    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20" hspace="10"></a>');
+    Add('        <a href="usersettings" name="UserSettings"><font size="3" color="#FFFFFF" face="arial">[?] User Name</font></a>');
+    Add('        <a href="boardsettings" name="BoardSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20" hspace="10"></a>');
     Add('      </td>');
     Add('    </tr>');
     Add('    <tr>');
@@ -455,7 +465,7 @@ begin
     //  - IE3 at Win95 does not support HTML button at all. Buttons are useful for submit form buttons and accessibility.
     //  - Netscape at OS/2
     Add('    <tr bgcolor="#2980b9">');
-    Add('      <td align="left" valign="top"><button class="js-add-board" title="Add Board" aria-label="Add Board" width="20" href="">Add Board</button></td>');
+    Add('      <td align="left= valign=top"><button class="js-add-board" title="Add Board" aria-label="Add Board" width="20" href="">Add Board</button></td>');
     Add('      <td align="right" valign="top"><img src="font/star.gif" width="20" height="20" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list."></td>');
     Add('      <td align="left" valign="top"><button class="js-star-board" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list." href="#">Star board</button></td>');
     Add('      <td align="right" valign="top"><img src="font/arrow/white/duplicate.gif" width="20" height="20"  title="Duplicate board" aria-label="Duplicate board"></td>');
@@ -465,37 +475,294 @@ begin
     Add('      <td><b><font color="#FFFFFF">Teams/Orgs</font></b></td>');
     Add('    </tr>');
     Add('  </table>');
-    Add('  <div class="kanban">');
-    Add('    <div class="column" id="todo">');
-    Add('      <h3>Starred Boards</h3>');
-    Add('       for _, starboard in ipairs(starboards) do');
-    Add('        <div class="card" draggable="true">');
-    Add('          <a href="/b/starboard_id/starboard.slug">');
-    Add('            = starboard.title<br />= starboard.description');
-    Add('          </a>');
-    Add('        </div>');
-    Add('       end ');
-    Add('  </div>');
-    Add('  <div class="column" id="in-progress">');
-    Add('    <h3>My Boards</h3>');
-    Add('     for _, nostarboard in ipairs(nostarboards) do ');
-    Add('      <div class="card" draggable="true">');
-    Add('        <a href="/b/nostarboard_id/nostarboard_slug">');
-    Add('          = nostarboard.title<br />= nostarboard.description');
-    Add('        </a>');
-    Add('      </div>');
-    Add('     end ');
-    Add('  </div>');
-    Add('  <div class="column" id="done">');
-    Add('    <h3>Template Boards</h3>');
-    Add('     for _, templateboard in ipairs(templateboards) do ');
-    Add('      <div class="card" draggable="true">');
-    Add('        <a href="/b/templateboard_id/templateboard_slug">');
-    Add('         = templateboard.title<br />= templateboard.description');
-    Add('        </a>');
-    Add('      </div>');
-    Add('     end ');
-    Add('  </div>');
+    // <h2>MultiDrag test, for future version of <a href="https://wekan.github.io">WeKan Open Source kanban</a></h2>
+    // <p>This MultiDrag test uses <a href="https://interactjs.io">https://interactjs.io</a> drag drop</p>
+    // <p>Features:</p>
+    // <ul>
+    // <li>Newest browsers, MultiDrag: Touchscreen, you can drag many cards at once with each finger.
+    //     Use case: Many users can drag their own card at big touch screen. Or one user can drag many cards.
+    //     There is not any kanban software with MultiDrag feature yet.
+    // </li>
+    // <li>Ladybird, OneDrag: Touchscreen, drag only one card at once. Is it possible to get MultiDrag?</li>
+    // <li>Legacy Browsers: Uses HTML4 tables, and GIF image for rounded corners, to be visible at Netsurf and Amiga IBrowse.
+    //     No drag drop features, so there will be buttons to move cards.
+    // </li>
+    // </ul> 
+    // Background GIF produces dithered background at Amiga IBrowse,
+    // so better to use table background color to get solid color:
+    // table background="img/round-blue.gif" => table bgcolor="#5e98c2"
+    // But this causes card to not have rounded corners at Netsurf and Amiga IBrowse.
+    // So, to have rounded corners at Netsurf and Amiga IBrowse, use background GIF.
+    //
+    // valid_colors = ['white', 'green', 'yellow', 'orange', 'red', 'purple', 'blue', 'sky', 'lime', 'pink', 'black',
+    //                 'silver', 'peachpuff', 'crimson', 'plum', 'darkgreen', 'slateblue', 'magenta', 'gold', 'navy',
+    //                 'gray', 'saddlebrown', 'paleturquoise', 'mistyrose', 'indigo']
+    //
+    // <table bgcolor="#5e98c2">
+    // blue
+
+    function boardIcon(boardtitle, tabindex, color, bgcolor) {
+     Result := '<table bgcolor="' + bgcolor + '" tabindex="' + tabindex + '" style="border-collapse: collapse;" width="200"' +
+               ' height="80" border="0" padding="0" spacing="0" id="drag-1" class="draggable" border-collapse="collapse">' + LineEnding +
+               '  <tbody>' + LineEnding +
+               '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+               '      <td width="20" height="20"></td>' + LineEnding +
+               '      <td width="160" height="40" valign="middle" align="top"><font size="1" color="' + color + '" face="arial"><b>' + boardtitle + '</b><p></p></font></td>' + LineEnding +
+               '      <td width="20" height="20"></td>' + LineEnding +
+               '    </tr>' + LineEnding +
+               '    <tr border="0" padding="0" spacing="0">');
+    Add('      <td width="20" height="20"></td>');
+    Add('      <td width="160" height="20"></td>');
+    Add('      <td width="20" height="20"></td>');
+    Add('    </tr>
+    Add('    <tr border="0" padding="0" spacing="0">');
+    Add('      <td width="20" height="20"></td>');
+    Add('      <td width="160" height="20"></td>');
+    Add('      <td width="20" height="20"></td>');
+    Add('    </tr>');
+    Add('  </tbody>');
+    Add('</table>');
+    Add('<br>');
+
+
+    Add('<table bgcolor="green" tabindex="2" style="border-collapse: collapse;" width="200" height="80" border="0" padding="0" spacing="0" id="drag-2" class="draggable" border-collapse="collapse">');
+    Add('  <tbody>');
+    Add('    <tr border="0" padding="0" spacing="0">');
+    Add('      <td width="20" height="20"></td>');
+    Add('      <td width="160" height="40" valign="middle" align="top"><font size="1" color="white" face="arial"><b>Drag many at once</b><p></p></font></td>');
+    Add('      <td width="20" height="20"></td>');
+    Add('    </tr>');
+    Add('    <tr border="0" padding="0" spacing="0">');
+    Add('      <td width="20" height="20"></td>');
+    Add('      <td width="160" height="20"></td>');
+    Add('      <td width="20" height="20"></td>');
+    Add('    </tr>');
+    Add('    <tr border="0" padding="0" spacing="0">');
+    Add('      <td width="20" height="20"></td>');
+    Add('      <td width="160" height="20"></td>');
+    <td width="20" height="20"></td>
+  </tr>
+</tbody></table>
+
+<br>
+
+<table bgcolor="red" tabindex="3" style="border-collapse: collapse;" width="200" height="80"
+ border="0" padding="0" spacing="0" id="drag-3" class="draggable" border-collapse="collapse">
+  <tbody><tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="40" valign="middle" align="top">
+      <font size="1" color="white" face="arial">
+        <b>Visible at Netsurf</b>
+        <p></p></font>
+    </td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+</tbody></table>
+
+<br>
+
+<table bgcolor="yellow" tabindex="4" style="border-collapse: collapse;" width="200" height="80"
+ border="0" padding="0" spacing="0" id="drag-4" class="draggable" border-collapse="collapse">
+  <tbody><tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="40" valign="middle" align="top">
+      <font size="1" color="black" face="arial">
+        <b>and Amiga IBrowse</b>
+        <p></p></font>
+    </td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+</tbody>
+</table>
+
+<br>
+
+<table bgcolor="gray" tabindex="5" style="border-collapse: collapse;" width="200" height="80"
+ border="0" padding="0" spacing="0" id="drag-5" class="draggable" border-collapse="collapse">
+  <tbody><tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="40" valign="middle" align="top">
+      <font size="1" color="white" face="arial">
+        <b>For all browsers</b>
+        <p></p></font>
+    </td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+</tbody>
+</table>
+
+<br>
+
+<table bgcolor="black" tabindex="6" style="border-collapse: collapse;" width="200" height="80"
+ border="0" padding="0" spacing="0" id="drag-6" class="draggable" border-collapse="collapse">
+  <tbody><tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="40" valign="middle" align="top">
+      <font size="1" color="white" face="arial">
+        <b>And all screen sizes</b>
+        <p></p></font>
+    </td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+</tbody>
+</table>
+
+<br>
+
+<table bgcolor="cyan" tabindex="7" style="border-collapse: collapse;" width="200" height="80"
+ border="0" padding="0" spacing="0" id="drag-7" class="draggable" border-collapse="collapse">
+  <tbody><tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="40" valign="middle" align="top">
+      <font size="1" color="black" face="arial">
+        <b>And all OS</b>
+        <p></p></font>
+    </td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+</tbody>
+</table>
+
+<br>
+
+<table bgcolor="pink" tabindex="8" style="border-collapse: collapse;" width="200" height="80"
+ border="0" padding="0" spacing="0" id="drag-8" class="draggable" border-collapse="collapse">
+  <tbody><tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="40" valign="middle" align="top">
+      <font size="1" color="black" face="arial">
+        <b>And CPUs</b>
+        <p></p></font>
+    </td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+</tbody>
+</table>
+
+<br>
+
+<table bgcolor="orange" tabindex="9" style="border-collapse: collapse;" width="200" height="80"
+ border="0" padding="0" spacing="0" id="drag-9" class="draggable" border-collapse="collapse">
+  <tbody><tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="40" valign="middle" align="top">
+      <font size="1" color="black" face="arial">
+        <b>At Earth</b>
+        <p></p></font>
+    </td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+</tbody>
+</table>
+
+<br>
+
+<table bgcolor="lightblue" tabindex="10" style="border-collapse: collapse;" width="200" height="80"
+ border="0" padding="0" spacing="0" id="drag-10" class="draggable" border-collapse="collapse">
+  <tbody><tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="40" valign="middle" align="top">
+      <font size="1" color="black" face="arial">
+        <b>And Space</b>
+        <p></p></font>
+    </td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+  <tr border="0" padding="0" spacing="0">
+    <td width="20" height="20"></td>
+    <td width="160" height="20"></td>
+    <td width="20" height="20"></td>
+  </tr>
+</tbody>
+</table>
+
+<br>
+
+<div class="redlines">
+  <svg height="210" width="500">
+    <line x1="0" y1="0" x2="270" y2="150" style="stroke:rgb(255,0,0);stroke-width:2" />
+  </svg>
+  <v:group coordorigin="0 0" coordsize="500 210" style="width:500px;height:210px;">
+    <v:line from="0,0" to="270,150" strokecolor="red" strokeweight="2pt" />
+  </v:group>  
+</div>
+
+    Add('<script src="multidrag/js/interact-bottom.js"></script>
     Add('</body>');
     Add('</html>');
   end;
