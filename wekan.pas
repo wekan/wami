@@ -73,8 +73,8 @@ end;
 // Example: Add(BoardIcon('At touchscreen', 1, 'white', 'blue'));
 function BoardIcon(BoardTitle: String; TabIndex: Integer; Color: String; BackgroundColor: String): String;
 begin
-Result := '<table bgcolor="' + BackgroundColor + '" tabindex="' + TabIndex + '" style="border-collapse: collapse;" width="200"' +
-          ' height="80" border="0" padding="0" spacing="0" id="drag-' + TabIndex + '" class="draggable" border-collapse="collapse">' + LineEnding +
+  Result := '<table bgcolor="' + BackgroundColor + '" tabindex="' + IntToStr(TabIndex) + '" style="border-collapse: collapse;" width="200"' +
+            ' height="80" border="0" padding="0" spacing="0" id="drag-' + IntToStr(TabIndex) + '" class="draggable" border-collapse="collapse">' + LineEnding +
           '  <tbody>' + LineEnding +
           '    <tr border="0" padding="0" spacing="0">' + LineEnding +
           '      <td width="20" height="20"></td>' + LineEnding +
@@ -98,17 +98,17 @@ end;
 
 function DrawLine(X1: Integer; Y1: Integer; X2: Integer; Y2: Integer; Width: Integer; Height: Integer; Color: String; StrokeWidth: String): String;
 begin
-// Color can be for example red or rgb(255,0,0) depending how it's defined
-// Strokewidth usually is 2
-// Example: DrawLine(0,0,270,150,500,210,'red',2);
-Result := '<div class="lines">' + LineEnding +
-          '  <svg width="' + Width + '" height="' + Height + '">' + LineEnding +
-          '    <line x1="' + X1 + '" y1="' + Y1 + '" x2="' + X2 + '" y2="' + Y2 + '" style="stroke:' + color + ';stroke-width:' + StrokeWidth + '" />' + LineEnding +
-          '  </svg>' + LineEnding +
-          '  <v:group coordorigin="' + X1 + ' ' + Y1 + '" coordsize="' + Width + ' ' + Height + '" style="width:' + Width + 'px;height:' + Height + 'px;">' + LineEnding +
-          '    <v:line from="' + X1 + ',' + Y1 + '" to="' + X2 + ',' + Y2 + '" strokecolor="' + Color + '" strokeweight="' + StrokeWidth + 'pt" />' + LineEnding +
-          '  </v:group>' + LineEnding +
-          '</div>' + LineEnding;
+  // Color can be for example red or rgb(255,0,0) depending how it's defined
+  // Strokewidth usually is 2
+  // Example: DrawLine(0,0,270,150,500,210,'red','2');
+  Result := '<div class="lines">' + LineEnding +
+            '  <svg width="' + IntToStr(Width) + '" height="' + IntToStr(Height) + '">' + LineEnding +
+            '    <line x1="' + IntToStr(X1) + '" y1="' + IntToStr(Y1) + '" x2="' + IntToStr(X2) + '" y2="' + IntToStr(Y2) + '" style="stroke:' + Color + ';stroke-width:' + StrokeWidth + '" />' + LineEnding +
+            '  </svg>' + LineEnding +
+            '  <v:group coordorigin="' + IntToStr(X1) + ' ' + IntToStr(Y1) + '" coordsize="' + IntToStr(Width) + ' ' + IntToStr(Height) + '" style="width:' + IntToStr(Width) + 'px;height:' + IntToStr(Height) + 'px;">' + LineEnding +
+            '    <v:line from="' + IntToStr(X1) + ',' + IntToStr(Y1) + '" to="' + IntToStr(X2) + ',' + IntToStr(Y2) + '" strokecolor="' + Color + '" strokeweight="' + StrokeWidth + 'pt" />' + LineEnding +
+            '  </v:group>' + LineEnding +
+            '</div>' + LineEnding;
 end;
 
 procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse);
@@ -470,7 +470,7 @@ begin
     Add('<meta name="msapplication-TileColor" content="#00aba9">');
     Add('<meta name="theme-color" content="#fff">');
     Add('<link rel="stylesheet" type="text/css" href="multidrag/css/interact.css">');
-    Add('<script src="multidrag/js/interact.js"></script>
+    Add('<script src="multidrag/js/interact.js"></script>');
     Add('</head>');
     Add('<body>');
     Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable"  bgcolor="#2573a7">');
@@ -550,7 +550,7 @@ begin
     Add(BoardIcon('At Earth', 9, 'black', 'orange'));
     Add(BoardIcon('And Space', 10, 'black', 'lightblue'));
     Add('<br>');
-    Add(DrawLine(0,0,270,150,500,210,'red',2));
+    Add(DrawLine(0,0,270,150,500,210,'red','2'));
     Add('<script src="multidrag/js/interact-bottom.js"></script>');
     Add('</body>');
     Add('</html>');
