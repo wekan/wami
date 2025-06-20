@@ -21,7 +21,7 @@
         - Elinks
         - w3m
    - Not supported browsers:
-     - Why
+     - Why?
        - No HTML Button and submit form features. How to save form data?
        - Is there some way to get these working?
      - IE3 at Win95
