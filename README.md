@@ -9,7 +9,7 @@
   - Retro
     - HTML4 like at https://aminet.net
     - Icons with GIF images, because GIF works at all browsers
-    - Rounded corners for cards and board icons with transparent corner GIF image
+    - [Round corners](https://github.com/wekan/wekan/issues/4326) for cards and board icons with transparent corner GIF image
     - Vector drawing at all browsers, function DrawLine(), for Pi Program Board with Red (and other color) Strings https://github.com/wekan/wekan/issues/3392
       - SVG
         - Netsurf
