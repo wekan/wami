@@ -1,5 +1,25 @@
 # Wami: WeKan made with FreePascal for Amiga etc
 
+## Design
+
+- Works at all browsers with same code
+  - Modern
+    - Drag multiple cards at once with touch at modern devices
+    - Rounded corners
+  - Retro
+    - HTML4 like at https://aminet.net
+    - Works at tiny RAM using browsers:
+      - Amiga IBrowse
+      - Netsurf
+      - IE6
+      - Elinks
+      - w3m
+- Accessibility
+  - Like KDE accessibility issue
+    - EU Directive 2019/882
+    - https://invent.kde.org/teams/accessibility/collaboration/-/issues/30
+    - https://www.youtube.com/watch?v=PM6TRj54L_8
+
 ## Screenshot
 
 FreePascal compilers for many operating systems:

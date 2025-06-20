@@ -469,8 +469,8 @@ begin
     Add('<meta name="application-name" content="WeKan">');
     Add('<meta name="msapplication-TileColor" content="#00aba9">');
     Add('<meta name="theme-color" content="#fff">');
-    Add('<link rel="stylesheet" type="text/css" href="multidrag/css/interact.css">');
-    Add('<script src="multidrag/js/interact.js"></script>');
+    Add('<link rel="stylesheet" type="text/css" href="css/interact.css">');
+    Add('<script src="js/interact.js"></script>');
     Add('</head>');
     Add('<body>');
     Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable"  bgcolor="#2573a7">');
@@ -551,7 +551,7 @@ begin
     Add(BoardIcon('And Space', 10, 'black', 'lightblue'));
     Add('<br>');
     Add(DrawLine(0,0,270,150,500,210,'red','2'));
-    Add('<script src="multidrag/js/interact-bottom.js"></script>');
+    Add('<script src="js/interact-bottom.js"></script>');
     Add('</body>');
     Add('</html>');
   end;
