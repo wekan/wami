@@ -4,16 +4,28 @@
 
 - Works at all browsers with same code
   - Modern
-    - Drag multiple cards at once with touch at modern devices
-    - Rounded corners
+    - Drag multiple cards at once with touch at modern devices with https://interactjs.io
+    - SVG/VML for vector drawing
   - Retro
     - HTML4 like at https://aminet.net
-    - Works at tiny RAM using browsers:
-      - Amiga IBrowse
-      - Netsurf
-      - IE6
-      - Elinks
-      - w3m
+    - Icons with GIF images, because GIF works at all browsers
+    - Rounded corners for cards and board icons with transparent corner GIF image
+    - Vector drawing at all browsers, function DrawLine(), for Pi Program Board with Red (and other color) Strings https://github.com/wekan/wekan/issues/3392
+      - SVG
+        - Netsurf
+        - Safari/Chromium/Firefox based browsers
+      - VML
+        - IE6
+      - TODO: ASCII art
+        - Amiga IBrowse
+        - Elinks
+        - w3m
+   - Not supported browsers:
+     - Why
+       - No HTML Button and submit form features. How to save form data?
+       - Is there some way to get these working?
+     - IE3 at Win95
+     - Netscape at OS/2
 - Accessibility
   - Like KDE accessibility issue
     - EU Directive 2019/882
