@@ -1,5 +1,6 @@
 ## Design of Wami
 
+- Original design Copyright by Lauri Ojansivu. Nobody else has this complete set of combined features.
 - Binary Formats are Better Than JSON in Browsers!
   - https://adamfaulkner.github.io/binary_formats_are_better_than_json_in_browsers.html
   - https://news.ycombinator.com/item?id=43978476
