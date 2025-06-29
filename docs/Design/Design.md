@@ -1,9 +1,9 @@
 ## Design of Wami
 
 - Some of current Meteor 2 WeKan Design, that is based to
-  - by original WeKan creator [mquandalle](https://github.com/mquandalle):
+  - by original WeKan creator [mquandalle](https://github.com/mquandalle)
     - [Original redesign](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before) 
-  - by [xet7](https://github.com/xet7) current maintainer of WeKan:
+  - by [xet7](https://github.com/xet7) current maintainer of WeKan
     - [Improvements to original design](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Design-Principles.md)
     - [Monkey Proof Software](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Monkey-Proof-Software.md)
     - Below original design of wami. Nobody else has this complete set of combined features.
