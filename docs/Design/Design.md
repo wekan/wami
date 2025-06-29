@@ -9,8 +9,6 @@
     - Below original design of Wami. Nobody else has this complete set of combined features.
     - NOT using transparent or Liquid Glass Design of macOS/iOS 26 Beta, Windows Vista etc https://github.com/howinfo/howinfo/wiki/Design or shadow, those were tried at WeKan, they did not work, too hard to see https://github.com/wekan/wekan/pull/1726
     - Color slide is OK, like at WeKan theme `clearblue`
-    - Designed for iffy Internet https://github.com/howinfo/howinfo/wiki/Design#should-we-design-for-iffy-internet
-    - Designed for Accessibility https://github.com/wekan/wekan/issues/459
 - Binary Formats are Better Than JSON in Browsers!
   - https://adamfaulkner.github.io/binary_formats_are_better_than_json_in_browsers.html
   - https://news.ycombinator.com/item?id=43978476
@@ -20,6 +18,8 @@
   - Duplicate Board works immeditely, because it's git branch of same data. Not need to copy hundreds of cards slowly one card a time.
 - Retro Modern Future
   - All browsers with same code, this can be seen working already with code at https://github.com/wekan/wami/blob/main/wekan.pas, where same code works and shows visible page at FreeDOS Dillo, Amiga IBrowse, Chrome etc, using some additional features where available. No feature detection. If browser adds new features, they work in that browser. Meteor 2 WeKan is not visible in all browsers, it requires modern browser with Javascript support.
+  - Designed for iffy Internet, with minimal amount of browserside code, does not require Javascript, but there is additional features when is Javascript support https://github.com/howinfo/howinfo/wiki/Design#should-we-design-for-iffy-internet
+  - Designed for Accessibility https://github.com/wekan/wekan/issues/459
   - Retro
     - HTML4 that works at Amiga IBrowse, Netsurf, Lynx, etc
     - At AmigaOS/AROS/MorphOS at 680x0/PPC/x86 uses FreePascal compiled at Amiga, SQLite database, IBrowse webbrowser or other available webbrowser
