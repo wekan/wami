@@ -6,7 +6,7 @@
   - by [xet7](https://github.com/xet7) current maintainer of WeKan
     - [Improvements to original design](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Design-Principles.md)
     - [Monkey Proof Software](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Monkey-Proof-Software.md)
-    - Below original design of wami. Nobody else has this complete set of combined features.
+    - Below original design of Wami. Nobody else has this complete set of combined features.
 - Binary Formats are Better Than JSON in Browsers!
   - https://adamfaulkner.github.io/binary_formats_are_better_than_json_in_browsers.html
   - https://news.ycombinator.com/item?id=43978476
