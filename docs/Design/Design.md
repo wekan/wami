@@ -27,12 +27,12 @@
     - At IE6, uses VML vector graphics for drawing lines between cards
     - No idea how to support Netscape or IE3, because they do not support submit form buttons
   - Modern features, when browser supports it
-    - Rounded corners with CSS
+    - Rounded corners with CSS, that is [original WeKan feature from 2022-02-06](https://github.com/wekan/wekan/issues/4326)
+      - Not using original Wami feature rounded corners for retro browsers with transparent corner GIF image from [2025-06-19](https://github.com/wekan/wami/commit/60a6d583#diff-55eb6b0b766ec41c008ef615b2f1d3e24ba16b8c8ba549a84c5e73e2ab54344bR15-R17) and [2025-06-20](https://github.com/wekan/wami/commit/31ba33b37ab4b867fd2e344bf5ad004085745cb4) because it would require GIF image for every color
     - Drag drop
-    - Do not use fake rounded corners with transparent corner GIF, because it would require GIF image for every color
     - There will be custom color selection from color wheel for font and background color. Or trying to calculate colors that are visible enough.
   - Future, when browser and device supports it
-    - Touch drag multiple cards at once with many fingers using https://interactjs.io . This is WeKan innovation, no other kanban has it yet.
+    - Touch drag multiple cards at once with many fingers using https://interactjs.io . This is [original Wami feature from 2025-03-27](https://github.com/wekan/wami/commit/5ef07efeac081c372c5e389eb9e6d80704a2614f), no other kanban has it yet.
 - No migrations
   - Use directly any existing database structure, with general card convert proxy:
     - WeKan any old and new version structure MongoDB 3, 6, 8 etc   
