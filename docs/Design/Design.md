@@ -9,6 +9,7 @@
     - Below original design of Wami. Nobody else has this complete set of combined features.
     - NOT using transparent or Liquid Glass Design of macOS/iOS 26 Beta, Windows Vista etc https://github.com/howinfo/howinfo/wiki/Design or shadow, those were tried at WeKan, they did not work, too hard to see https://github.com/wekan/wekan/pull/1726
     - Color slide is OK, like at WeKan theme `clearblue`
+    - Mobile and desktop apps with fullscreen browsers like already is at with https://wekan.fi/app/ , where automatic Snap backend upgrade also updates backend app, not requiring publising new versions of frontend apps to stores
 - Binary Formats are Better Than JSON in Browsers!
   - https://adamfaulkner.github.io/binary_formats_are_better_than_json_in_browsers.html
   - https://news.ycombinator.com/item?id=43978476
