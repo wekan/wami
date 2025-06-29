@@ -10,6 +10,7 @@
     - NOT using transparent or Liquid Glass Design of macOS/iOS 26 Beta, Windows Vista etc https://github.com/howinfo/howinfo/wiki/Design or shadow, those were tried at WeKan, they did not work, too hard to see https://github.com/wekan/wekan/pull/1726
     - Color slide is OK, like at WeKan theme `clearblue`
     - Designed for iffy Internet https://github.com/howinfo/howinfo/wiki/Design#should-we-design-for-iffy-internet
+    - Designed for Accessibility https://github.com/wekan/wekan/issues/459
 - Binary Formats are Better Than JSON in Browsers!
   - https://adamfaulkner.github.io/binary_formats_are_better_than_json_in_browsers.html
   - https://news.ycombinator.com/item?id=43978476
