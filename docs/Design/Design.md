@@ -12,7 +12,11 @@
   - All browsers with same code. No feature detection. If browser adds new features, they work in that browser.
   - Retro
     - HTML4 that works at Amiga IBrowse, Netsurf, Lynx, etc
+    - At AmigaOS/AROS/MorphOS at 680x0/PPC/x86 uses FreePascal compiled at Amiga, SQLite database, IBrowse webbrowser or other available webbrowser
     - No drag drop, so showing checkboxes and buttons for moving etc
+    - No SVG or VML, so uses ASCII graphics for drawing lines between cards
+    - At IE6, uses VML vector graphics for drawing lines between cards
+    - No idea how to support Netscape or IE3, because they do not support submit form buttons
   - Modern features, when browser supports it
     - Rounded corners with CSS
     - Drag drop
@@ -24,8 +28,12 @@
   - Use directly any existing database structure, with general card convert proxy:
     - WeKan any old and new version structure MongoDB 3, 6, 8 etc
     - Kanboard
-    - Trello
-    - Jira
+    - Trello. Newest Trello has new design:
+      - Email Inbox
+      - New board button position at top, copied from [original WeKan feature from 2018-09-28]( https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v1511-2018-09-28-wekan-edge-release)
+      - Mirror Card, copied from [original WeKan feature Linked Cards from 2018-04-18](https://github.com/wekan/wekan/pull/1592), discussed at [WeKan issue 5683](https://github.com/wekan/wekan/issues/5683)
+      - Map Card, copied from [original WeKan feature request from  2017-01-06](https://github.com/wekan/wekan/issues/755)
+    - Jira. Newest Jira at 2025-06-29 has UI design copied from ClickUp, where is left sidebar menu.
     - ClickUp
     - etc
   - Detects what database is used
