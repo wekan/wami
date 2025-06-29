@@ -18,7 +18,7 @@
   - https://github.com/howinfo/howinfo/wiki/Database#git-branching-style-for-data
   - Duplicate Board works immeditely, because it's git branch of same data. Not need to copy hundreds of cards slowly one card a time.
 - Retro Modern Future
-  - All browsers with same code. No feature detection. If browser adds new features, they work in that browser.
+  - All browsers with same code, this can be seen working already with code at https://github.com/wekan/wami/blob/main/wekan.pas, where same code works and shows visible page at FreeDOS Dillo, Amiga IBrowse, Chrome etc, using some additional features where available. No feature detection. If browser adds new features, they work in that browser. Meteor 2 WeKan is not visible in all browsers, it requires modern browser with Javascript support.
   - Retro
     - HTML4 that works at Amiga IBrowse, Netsurf, Lynx, etc
     - At AmigaOS/AROS/MorphOS at 680x0/PPC/x86 uses FreePascal compiled at Amiga, SQLite database, IBrowse webbrowser or other available webbrowser
