@@ -1,6 +1,7 @@
 ## Design of Wami
 
 - This is Gold Standard for Cross-Platform GUI App Design by [xet7](https://github.com/xet7) https://forum.lunduke.com/t/gold-standard-of-gui-design/1909
+- Platform Promise like GitLab: "No separate tools required". This means adding to WeKan features like chat, etc, so that I would not need to use RocketChat, and I could move from paid server to server donated to WeKan development that has less RAM and more bandwidth
 - Some of current Meteor 2 WeKan Design, that is based to
   - by original WeKan creator [mquandalle](https://github.com/mquandalle)
     - [Original redesign](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before) 
