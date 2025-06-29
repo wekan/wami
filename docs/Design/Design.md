@@ -1,5 +1,6 @@
 ## Design of Wami
 
+- This is Gold Standard for Cross-Platform GUI and App Design by [xet7](https://github.com/xet7) https://forum.lunduke.com/t/gold-standard-of-gui-design/1909
 - Some of current Meteor 2 WeKan Design, that is based to
   - by original WeKan creator [mquandalle](https://github.com/mquandalle)
     - [Original redesign](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before) 
@@ -10,7 +11,6 @@
     - NOT using transparent or Liquid Glass Design of macOS/iOS 26 Beta, Windows Vista etc https://github.com/howinfo/howinfo/wiki/Design or shadow, those were tried at WeKan, they did not work, too hard to see https://github.com/wekan/wekan/pull/1726
     - Color slide is OK, like at WeKan theme `clearblue`
     - Mobile and desktop apps with fullscreen browsers like already is at with https://wekan.fi/app/ , where automatic Snap backend upgrade also updates backend app, not requiring publising new versions of frontend apps to stores
-    - This is Gold Standard for GUI Design by [xet7](https://github.com/xet7) https://forum.lunduke.com/t/gold-standard-of-gui-design/1909
 - Binary Formats are Better Than JSON in Browsers!
   - https://adamfaulkner.github.io/binary_formats_are_better_than_json_in_browsers.html
   - https://news.ycombinator.com/item?id=43978476
