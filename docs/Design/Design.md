@@ -24,9 +24,12 @@
     - There will be custom color selection from color wheel for font and background color. Or trying to calculate colors that are visible enough.
   - Future, when browser and device supports it
     - Touch drag multiple cards at once with many fingers using https://interactjs.io . This is WeKan innovation, no other kanban has it yet.
+  - Some of current Meteor 2 WeKan Design, that is based to
+    - [Original redesign](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before) by original WeKan creator [mquandalle](https://github.com/mquandalle)
+    - [Improvements to design](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Design-Principles.md) and [Monkey Proof Software](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Monkey-Proof-Software.md) by [xet7](https://github.com/xet7) current maintainer of WeKan
 - No migrations
   - Use directly any existing database structure, with general card convert proxy:
-    - WeKan any old and new version structure MongoDB 3, 6, 8 etc
+    - WeKan any old and new version structure MongoDB 3, 6, 8 etc   
     - Kanboard
     - Trello. Newest Trello has new design:
       - Email Inbox
