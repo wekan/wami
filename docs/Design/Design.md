@@ -75,4 +75,6 @@ At  was asked about:
     - A: There will be migrations from all WeKan versions to Wami
   - Q: SAML-based Single Sign-On (SSO) so that users can log in with their Windows credentials. Are there any specific configurations we should apply when enabling SAML via the Helm Chart?
     - A: Would this work? https://github.com/wekan/wekan/issues/5758
+- Q: Feature Request: Ability to have different List names and List colors at each Swimlane, and ability to move one list at one swimlane to different swimlane
+  - A: Will be in this new WeKan version that is Wami. In Progress.  
 
