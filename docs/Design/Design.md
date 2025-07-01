@@ -62,6 +62,10 @@
   - Can save to any structure
   - Import/Export/Sync anything
   - Takes care of rate limits and errors of each API. Sensible default settings, and possibility change settings for rate limit etc.
+- Have Wami repo issues mirrored at many places
+  - GitHub, original location
+  - Fossil SCM, so cloning repo also clones issues fast. There is no rate limits at downloading issues with Fossil SCM, like there is at GitHub. Fossil SCM stores repo to SQLite file, so it's possible to use it with SQLite command also at Amiga etc.
+  - Gitea
 
 ## Contributing to design
 
