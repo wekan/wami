@@ -77,6 +77,8 @@
 
 ## Progress of Paid Features
 
+It's possible to pay for features and fixes at https://wekan.fi/commercial-support/
+
 At  was asked about:
 
 - A 2025-07-01
