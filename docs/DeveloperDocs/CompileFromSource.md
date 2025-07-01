@@ -1,12 +1,14 @@
 ## Compile from source
 
-1. Download FreePascal Compiler from https://www.freepascal.org/download.html
+Other operating systems of FreePascal Compiler here https://www.freepascal.org/download.html
 
-2. Add freepascal compiler fpc to your path
+### Linux
 
-2. Clone Wami repo, compile and run:
+Install Git and FreePascal, compile and run:
 
 ```
+sudo apt-get -y install git fpc
+
 git clone https://github.com/wekan/wami
 
 cd wami
