@@ -71,7 +71,7 @@ If normal markdown, emoji, and your new added plugin syntax all work, commit you
 ```
 git add --all
 
-git commit -m "Fixes DESCRIPTIO-ABOUT-WHAT-YOU-FIXED"
+git commit -m "Fixes DESCRIPTION-ABOUT-WHAT-YOU-FIXED"
 
 git push
 ```
