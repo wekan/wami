@@ -69,6 +69,7 @@
   - GitHub, original location
   - Fossil SCM, so cloning repo also clones issues fast. There is no rate limits at downloading issues with Fossil SCM, like there is at GitHub. Fossil SCM stores repo to SQLite file, so it's possible to use it with SQLite command also at Amiga etc.
   - Gitea
+  - Issues with https://github.com/git-bug/git-bug
 
 ## Contributing to design
 
