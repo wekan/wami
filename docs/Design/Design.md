@@ -1,6 +1,7 @@
 ## Design of Wami
 
 - This is Gold Standard for Cross-Platform GUI App Design by [xet7](https://github.com/xet7) https://forum.lunduke.com/t/gold-standard-of-gui-design/1909
+- Feature Request: System options to GDPR compliance https://github.com/wekan/wekan/issues/5820
 - Platform Promise like GitLab mentioned at GitLab 18 event: "No separate tools required". For WeKan, this means adding to WeKan features like chat, etc, so that I would not need to use RocketChat, and I could move from paid server to server donated to WeKan development that has less RAM and more bandwidth
 - Make WeKan simpler. Similar, like there is Basecamp being made simpler https://www.youtube.com/watch?v=V_WkIbqhGQ4 and https://www.youtube.com/watch?v=Cz6J9eU268Q . For WeKan, this means changing settigs popup menus etc to full screen pages, so more is visible at once.
 - Add minimap, like at some games there is. This is original Wami feature, no other kanban has minimap. So visible part of WeKan kanban board is loaded immediately, with minimal amount of browserside code, and from minimap it's possible to move to other parts of board. If there is Javascript support, load only visible part of board, and when scrolling, load more cards when that part of board becomes visible.
