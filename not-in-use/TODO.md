@@ -1,4 +1,4 @@
-## Status
+## Old Status
 
 wami: http://localhost:5500/upload
 
