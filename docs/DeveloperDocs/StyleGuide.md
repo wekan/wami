@@ -90,23 +90,23 @@
 ### HTML4 tags to use first, to make visible at all browsers
 
 - Use only one table. No nested tables, no merged cells, no split cells.
-- table tbody tr td
-- &lt;font size="4" face="arial" color="#000000" bgcolor="#FFFFFF"&gt;Text&lt;/font&gt;
-- border="0"
-- tabindex="1" with numbering tab order like 1, 2, 3, etc. For example from card to next card.
-- height="80" width="20"
-- padding="0" spacing="0", changing these numbers where it looks better
-- id="SomeID", usually descriptive name of ID so that some code can be used with it, for example for styling, drag drop, etc
-- height="20"
+- <code>table tbody tr td</code>
+- <code>&lt;font size="4" face="arial" color="#000000" bgcolor="#FFFFFF"&gt;Text&lt;/font&gt;</code>
+- <code>border="0"</code>
+- <code>tabindex="1"</code> with numbering tab order like 1, 2, 3, etc. For example from card to next card.
+- <code>height="80" width="20"</code>
+- <code>padding="0" spacing="0"</code>, changing these numbers where it looks better
+- <code>id="SomeID"</code>, usually descriptive name of ID so that some code can be used with it, for example for styling, drag drop, etc
+- <code>height="20"</code>
 - HTML form elements, like checklists, submit buttons
-- There is upload example at wekan.pas
+- There is upload example at https://github.com/wekan/wami/blob/main/wekan.pas
 
 ### Rarely used tags
 
 These only work at modern browsers, so use only if it looks similar with above HTML4 tags.
 
-- div
-- style
+- <code>div</code>
+- <code>style</code>
 
 ## Optional CSS and Javascript code for modern browsers
 
