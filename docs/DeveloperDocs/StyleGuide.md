@@ -95,9 +95,8 @@
 - border="0"
 - tabindex="1" with numbering tab order like 1, 2, 3, etc. For example from card to next card.
 - height="80" width="20"
-- padding="0"
-- spacing="0"
-- id="SomeID"
+- padding="0" spacing="0", changing these numbers where it looks better
+- id="SomeID", usually descriptive name of ID so that some code can be used with it, for example for styling, drag drop, etc
 - height="20"
 - HTML form elements, like checklists, submit buttons
 - There is upload example at wekan.pas
@@ -108,3 +107,14 @@ These only work at modern browsers, so use only if it looks similar with above H
 
 - div
 - style
+
+## Optional CSS and Javascript code for modern browsers
+
+- At wami/public/js/ and wami/public/css, used with relative URLs.
+- &lt;link rel="stylesheet" type="text/css" href="css/interact.css"&rt;
+- &ltscript src="js/interact.js"&rt;&lt;/script&rt;
+- Do not use fixed URLs like /css/something.css, that does not work with sub-url
+- This makes possible with Wami:
+    - Sub-URL like https://example.com/kanban/
+    - [Multitenancy](https://en.wikipedia.org/wiki/Multitenancy) like having same kanban serve with many different domain URLs for many organizations
+- This is not possible with Meteor, that requires environment setting ROOT_URL. This is only possible with Wami.
