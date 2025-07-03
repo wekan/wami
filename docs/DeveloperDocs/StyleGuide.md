@@ -91,7 +91,7 @@
 
 - Use only one table. No nested tables, no merged cells, no split cells.
 - table tbody tr td
-- &lt;font size="4" face="arial" color="#000000" bgcolor="#FFFFFF"&rt;Text&lt;/font&rt;
+- &lt;font size="4" face="arial" color="#000000" bgcolor="#FFFFFF"&gt;Text&lt;/font&gt;
 - border="0"
 - tabindex="1"
 - height="80" width="20"
