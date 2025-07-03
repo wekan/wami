@@ -87,6 +87,54 @@ Minimap
 - From minimap it's possible to move to other parts of board.
 - If there is Javascript support, load only visible part of board, and when scrolling, load more cards when that part of board becomes visible.
 
-Supported HTML4 code
+Example Supported HTML4 code
 
--
+<pre>
+// Example: Add(BoardIcon('At touchscreen', 1, 'white', 'blue'));
+function BoardIcon(BoardTitle: String; TabIndex: Integer; Color: String; BackgroundColor: String): String;
+begin
+  Result := '<table bgcolor="' + BackgroundColor + '" tabindex="' + IntToStr(TabIndex) + '" style="border-collapse: collapse;" width="200"' +
+            ' height="80" border="0" padding="0" spacing="0" id="drag-' + IntToStr(TabIndex) + '" class="draggable" border-collapse="collapse">' + LineEnding +
+          '  <tbody>' + LineEnding +
+          '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '      <td width="160" height="40" valign="middle" align="top"><font size="1" color="' + Color + '" face="arial"><b>' + BoardTitle + '</b><p></p></font></td>' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '    </tr>' + LineEnding +
+          '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '      <td width="160" height="20"></td>' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '    </tr>' + LineEnding +
+          '    <tr border="0" padding="0" spacing="0">' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '      <td width="160" height="20"></td>' + LineEnding +
+          '      <td width="20" height="20"></td>' + LineEnding +
+          '    </tr>' + LineEnding +
+          '  </tbody>' + LineEnding +
+          '</table>' + LineEnding +
+          '<br>' + LineEnding;
+end;
+<pre>
+
+HTML4 tags to use first, to make visible at all browsers
+
+<pre>
+- Use only one table. No nested tables, no merged cells, no split cells.
+- table tbody tr td
+- <font size="4" face="arial" color="#000000" bgcolor="#FFFFFF">Text</font>
+- border="0"
+- tabindex="1"
+- height="80" width="20"
+- padding="0"
+- spacing="0"
+- id="SomeID"
+- height="20"
+- HTML form elements, like checklists, submit buttons
+- There is upload example at wekan.pas
+</pre>
+
+These only work at modern browsers, so use only if it looks similar with above HTML4 tags
+
+- div
+- style
