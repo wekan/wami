@@ -1,1 +1,5 @@
-This was [moved to Developer Docs](../DeveloperDocs/Design.md)
+## Moved
+
+[Design was moved here](../DeveloperDocs/Design.md)
+
+[Progress of Paid Features was moved here](../DeveloperDocs/ProgressOfPaidFeatures.md)

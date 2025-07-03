@@ -75,3 +75,5 @@
 
 - Feature Request: System options to GDPR compliance https://github.com/wekan/wekan/issues/5820
 - Question: Is there a way to bulk remove labels https://github.com/wekan/wekan/issues/5819
+
+[Progress of Paid Features](ProgressOfPaidFeatures.md)
