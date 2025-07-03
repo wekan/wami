@@ -93,7 +93,7 @@
 - table tbody tr td
 - &lt;font size="4" face="arial" color="#000000" bgcolor="#FFFFFF"&gt;Text&lt;/font&gt;
 - border="0"
-- tabindex="1"
+- tabindex="1" with numbering tab order like 1, 2, 3, etc. For example from card to next card.
 - height="80" width="20"
 - padding="0"
 - spacing="0"
@@ -102,7 +102,9 @@
 - HTML form elements, like checklists, submit buttons
 - There is upload example at wekan.pas
 
-### These only work at modern browsers, so use only if it looks similar with above HTML4 tags
+### Rarely used tags
+
+These only work at modern browsers, so use only if it looks similar with above HTML4 tags.
 
 - div
 - style
