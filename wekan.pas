@@ -176,6 +176,7 @@ begin
     Add('<p><b>Cards</b>: <a href="my-cards">My Cards</a>');
     Add(' - <a href="due-cards">Due Cards</a>');
     Add(' - <a href="import">Import</a></p>');
+    Add('<p><b><a href="calendar">Calendar</a></b></p>');
     Add('<p><b>Upload</b>: <a href="upload">Upload</a></p>');
     Add('<p><b>Search</b>: <a href="global-search">Global Search</a>');
     Add('<p><b>Admin</b>: <a href="broken-cards">Broken Cards</a>');
@@ -872,6 +873,101 @@ begin
   aResponse.SendContent;
 end;
 
+procedure calendarEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content := '';
+  with aResponse.Contents do
+  begin
+    // For accessibility, use only one table. Not nested table. Avoid merged or split cells.
+    // Consider Alternative Views: For calendars, offer a "list view" or other simplified
+    // representations that are inherently more linear and accessible for assistive technology users.
+    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">');
+    Add('<html lang="en">');
+    Add('<head>');
+    Add('  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">');
+    Add('  <title>July 2025 Calendar</title>');
+    Add('  <style type="text/css">');
+    Add('    table      { width: 100%; border-collapse: collapse; margin-bottom: 20px; }');
+    Add('    th, td     { border: 1px solid #ccc; padding: 8px; text-align: center; }');
+    Add('    th         { background-color: #f2f2f2; }');
+    Add('    .empty-day { background-color: #eee; color: #999; }');
+    // background-color: #d1e7dd; Light green to highlight today
+    Add('    .today     { background-color: #d1e7dd; font-weight: bold; border: 2px solid #007bff; }');
+    Add('    caption    { font-size: 1.5em; margin-bottom: 10px; font-weight: bold; text-align: left; }');
+    Add('  </style>');
+    Add('</head>');
+    Add('<body>');
+    Add('<h1>July 2025 Calendar</h1>');
+    Add('<table summary="This table displays the calendar for July 2025. Days of the week are column headers, and dates are listed under them." width=" 100%" border-collapse="collapse" margin-bottom="20">');
+    Add('  <caption><h1>July 2025</h1></caption>');
+    Add('  <thead>');
+    Add('    <tr>');
+    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2">Monday</th>');
+    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2">Tuesday</th>');
+    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2">Wednesday</th>');
+    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2">Thursday</th>');
+    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2">Friday</th>');
+    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2">Saturday</th>');
+    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2">Sunday</th>');
+    Add('    </tr>');
+    Add('  </thead>');
+    Add('  <tbody>');
+    Add('    <tr>');
+    Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"></td>');
+    Add('      <td border="1" padding="8" align="center">1</td>');
+    Add('      <td border="1" padding="8" align="center">2</td>');
+    Add('      <td class="today" border="1" padding="8" align="center" bgcolor="#d1e7dd" border="2"><b>3</b></td>');
+    Add('      <td border="1" padding="8" align="center">4</td>');
+    Add('      <td border="1" padding="8" align="center">5</td>');
+    Add('      <td border="1" padding="8" align="center">6</td>');
+    Add('    </tr>');
+    Add('    <tr>');
+    Add('      <td border="1" padding="8" align="center">7</td>');
+    Add('      <td border="1" padding="8" align="center">8</td>');
+    Add('      <td border="1" padding="8" align="center">9</td>');
+    Add('      <td border="1" padding="8" align="center">10</td>');
+    Add('      <td border="1" padding="8" align="center">11</td>');
+    Add('      <td border="1" padding="8" align="center">12</td>');
+    Add('      <td border="1" padding="8" align="center">13</td>');
+    Add('    </tr>');
+    Add('    <tr>');
+    Add('      <td border="1" padding="8" align="center">14</td>');
+    Add('      <td border="1" padding="8" align="center">15</td>');
+    Add('      <td border="1" padding="8" align="center">16</td>');
+    Add('      <td border="1" padding="8" align="center">17</td>');
+    Add('      <td border="1" padding="8" align="center">18</td>');
+    Add('      <td border="1" padding="8" align="center">19</td>');
+    Add('      <td border="1" padding="8" align="center">20</td>');
+    Add('    </tr>');
+    Add('    <tr>');
+    Add('      <td border="1" padding="8" align="center">21</td>');
+    Add('      <td border="1" padding="8" align="center">22</td>');
+    Add('      <td border="1" padding="8" align="center">23</td>');
+    Add('      <td border="1" padding="8" align="center">24</td>');
+    Add('      <td border="1" padding="8" align="center">25</td>');
+    Add('      <td border="1" padding="8" align="center">26</td>');
+    Add('      <td border="1" padding="8" align="center">27</td>');
+    Add('    </tr>');
+    Add('    <tr>');
+    Add('      <td border="1" padding="8" align="center">28</td>');
+    Add('      <td border="1" padding="8" align="center">29</td>');
+    Add('      <td border="1" padding="8" align="center">30</td>');
+    Add('      <td border="1" padding="8" align="center">31</td>');
+    Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"></td>');
+    Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"></td>');
+    Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"></td>');
+    Add('    </tr>');
+    Add('  </tbody>');
+    Add('</table>');
+    Add('</body>');
+    Add('</html>');
+  end;
+  aResponse.Code:=200;
+  aResponse.ContentType:='text/html';
+  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
 procedure templatesEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
   aResponse.Content:='Templates';
@@ -1131,6 +1227,7 @@ begin
   HTTPRouter.RegisterRoute('/information', rmGet, @informationEndpoint);
   HTTPRouter.RegisterRoute('/people', rmGet, @peopleEndpoint);
   HTTPRouter.RegisterRoute('/admin-reports', rmGet, @adminReportsEndpoint);
+  HTTPRouter.RegisterRoute('/calendar', rmGet, @calendarEndpoint);
   HTTPRouter.RegisterRoute('/upload', rmGet, @uploadEndpoint);
   HTTPRouter.RegisterRoute('/upload', rmPost, @uploadEndpoint);
   HTTPRouter.RegisterRoute('/translation', rmGet, @translationEndpoint);
