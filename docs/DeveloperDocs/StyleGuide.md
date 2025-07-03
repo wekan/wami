@@ -110,9 +110,10 @@ These only work at modern browsers, so use only if it looks similar with above H
 
 ## Optional CSS and Javascript code for modern browsers
 
-- At wami/public/js/ and wami/public/css, used with <b>relative URLs</b>.
-- &lt;link rel="stylesheet" type="text/css" href="css/interact.css"&gt;
-- &lt;script src="js/interact.js"&gt;&lt;/script&gt;
+- At <code>wami/public/js/</code> and <code>wami/public/css</code>, used with <b>relative URLs</b>.
+- Here https://interactjs.io makes possible multidrag, dragging many cards at once with many fingers, at touchscreen with modern browser:
+  - <code>&lt;link rel="stylesheet" type="text/css" href="css/interact.css"&gt;</code>
+  - <code>&lt;script src="js/interact.js"&gt;&lt;/script&gt;</code>
 - Do not use <b>absolute URLs</b> like /css/something.css, that does not work with sub-url
 - This makes possible with Wami:
     - Sub-URL like https://example.com/kanban/
