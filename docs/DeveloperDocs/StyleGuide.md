@@ -112,7 +112,7 @@ These only work at modern browsers, so use only if it looks similar with above H
 
 - At wami/public/js/ and wami/public/css, used with relative URLs.
 - &lt;link rel="stylesheet" type="text/css" href="css/interact.css"&gt;
-- &ltscript src="js/interact.js"&gt;&lt;/script&gt;
+- &lt;script src="js/interact.js"&gt;&lt;/script&gt;
 - Do not use fixed URLs like /css/something.css, that does not work with sub-url
 - This makes possible with Wami:
     - Sub-URL like https://example.com/kanban/
