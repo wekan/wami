@@ -1,8 +1,28 @@
 ## Style Guide
 
-Anybrowser-style, designed for WeKan Open Source kanban development.
+Definitions
 
-- To be accessible to any user, pages need to be visible at any browser. 
+- WeKan is Open Source kanban software. There are many different versions of WeKan for many platforms:
+  - Meteor 2
+    - Previous version of WeKan
+    - https://github.com/wekan/wekan
+    - Supports modern browsers
+    - Features: https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Deep-Dive-Into-WeKan.md
+  - Wami
+    - Current version of WeKan, in very active development
+    - https://github.com/wekan/wami
+    - Anybrowser
+    - Accessibility
+  - Many more
+    - https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/WeKan-Multiverse-Roadmap.md
+
+Anybrowser-style, designed for WeKan development
+
+- To be accessible to any user, pages need to be visible at any browser
+  - This is working already with code at https://github.com/wekan/wami/blob/main/wekan.pas
+- Designed for iffy Internet
+  - with minimal amount of browserside code
+  - https://github.com/howinfo/howinfo/wiki/Design#should-we-design-for-iffy-internet
 
 Progressive enhancement
 
@@ -13,7 +33,10 @@ Progressive enhancement
   - Images and icons with GIF images, that are visible at any browser
   - Works without Javascript
   - Additional features where browser supports it:
-    - CSS Rounded Corners (not using fake transparent GIF edges, because it would require separate GIF image for each color)
+    - CSS Rounded Corners
+      - not using fake transparent GIF edges, because it would require separate GIF image for each color
+        - [2025-06-19](https://github.com/wekan/wami/commit/60a6d583#diff-55eb6b0b766ec41c008ef615b2f1d3e24ba16b8c8ba549a84c5e73e2ab54344bR15-R17) and [2025-06-20](https://github.com/wekan/wami/commit/31ba33b37ab4b867fd2e344bf5ad004085745cb4)
+      - [Original WeKan feature from 2022-02-06](https://github.com/wekan/wekan/issues/4326)
     - Drag drop of Swimlanes/Lists/Cards/Checklists
     - If browser does not support Javascript, moving cards by checkbox selecting them, pressing Move Submit button
     - If device has touch screen, there is touch drag drop
@@ -38,9 +61,22 @@ Supported browsers
 - Legacy browsers based on browser engines from Microsoft
   - EdgeHTML like Legacy Edge (that was after IE, and before Credge/Chromium Edge)
   - MSHTML like IE6
+- List of webbrowsers
+  - https://github.com/wekan/wekan/blob/main/docs/Browsers/Browser-compatibility-matrix.md has what is supported by Meteor 2. Wami supports Anybrowser.
+  - https://github.com/howinfo/howinfo/wiki/Browser
 
 Accessibility
 
 - To be accessible to any user, pages need to be visible at any browser.
+- Accessibility links at https://github.com/wekan/wekan/issues/459
 - Use only one table. No nested tables, those do not work with screen readers. Do not use merged of split cells.
 - Semantic HTML https://developer.mozilla.org/en-US/docs/Glossary/Semantics
+- There will be custom color selection from color wheel for font and background color. Or trying to calculate colors that are visible enough.
+
+Minimap
+
+- Add minimap, like at some games there is.
+- This is original Wami feature, no other kanban has minimap.
+- So visible part of WeKan kanban board is loaded immediately, with minimal amount of browserside code.
+- From minimap it's possible to move to other parts of board.
+- If there is Javascript support, load only visible part of board, and when scrolling, load more cards when that part of board becomes visible.
