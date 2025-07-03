@@ -1,79 +1,17 @@
-## Design of Wami
+## Progress of Paid Features
 
-- This is Gold Standard for Cross-Platform GUI App Design by [xet7](https://github.com/xet7) https://forum.lunduke.com/t/gold-standard-of-gui-design/1909
-- Compile Offline with FreePascal
-  - Compile step does not download dependencies from Internet, like NPM, PyPi and Rust Crates.io
-  - Many additional OS/CPU platforms of FreePascal https://www.freepascal.org/download.html , much more than what Node.js/Python/Rust supports
-  - It's possible to develop Wami with FreePascal at AmigaOS/AROS/MorphOS, compiling and runnign WeKan server, using with IBrowse webbrowser, using SQLite database, using much less CPU and RAM.
-- Platform Promise like GitLab mentioned at GitLab 18 event: "No separate tools required". For WeKan, this means adding to WeKan features like chat, etc, so that I would not need to use RocketChat, and I could move from paid server to server donated to WeKan development that has less RAM and more bandwidth
-- Make WeKan simpler. Similar, like there is Basecamp being made simpler https://www.youtube.com/watch?v=V_WkIbqhGQ4 and https://www.youtube.com/watch?v=Cz6J9eU268Q . For WeKan, this means changing settigs popup menus etc to full screen pages, so more is visible at once.
-- Add minimap, like at some games there is. This is original Wami feature, no other kanban has minimap. So visible part of WeKan kanban board is loaded immediately, with minimal amount of browserside code, and from minimap it's possible to move to other parts of board. If there is Javascript support, load only visible part of board, and when scrolling, load more cards when that part of board becomes visible.
-- Some of current Meteor 2 WeKan Design, that is based to
-  - by original WeKan creator [mquandalle](https://github.com/mquandalle)
-    - [Original redesign](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before) 
-  - by [xet7](https://github.com/xet7) current maintainer of WeKan
-    - [Improvements to original design](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Design-Principles.md)
-    - [Monkey Proof Software](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Monkey-Proof-Software.md)
-    - Below original design of Wami. Nobody else has this complete set of combined features.
-    - NOT using transparent or Liquid Glass Design of macOS/iOS 26 Beta, Windows Vista etc https://github.com/howinfo/howinfo/wiki/Design or shadow, those were tried at WeKan, they did not work, too hard to see https://github.com/wekan/wekan/pull/1726
-    - Color slide is OK, like at WeKan theme `clearblue`
-    - Mobile and desktop apps with fullscreen browsers like already is at with https://wekan.fi/app/ , where automatic Snap backend upgrade also updates backend app, not requiring publising new versions of frontend apps to stores
-- Binary Formats are Better Than JSON in Browsers!
-  - https://adamfaulkner.github.io/binary_formats_are_better_than_json_in_browsers.html
-  - https://news.ycombinator.com/item?id=43978476
-  - https://github.com/howinfo/howinfo/wiki/Browser#development
-- Git Branching style for data
-  - https://github.com/howinfo/howinfo/wiki/Database#git-branching-style-for-data
-  - Duplicate Board works immeditely, because it's git branch of same data. Not need to copy hundreds of cards slowly one card a time.
-- Retro Modern Future
-  - All browsers with same code, this can be seen working already with code at https://github.com/wekan/wami/blob/main/wekan.pas, where same code works and shows visible page at FreeDOS Dillo, Amiga IBrowse, Chrome etc, using some additional features where available. No feature detection. If browser adds new features, they work in that browser. Meteor 2 WeKan is not visible in all browsers, it requires modern browser with Javascript support.
-  - Designed for iffy Internet, with minimal amount of browserside code, does not require Javascript, but there is additional features when is Javascript support https://github.com/howinfo/howinfo/wiki/Design#should-we-design-for-iffy-internet
-  - Designed for Accessibility https://github.com/wekan/wekan/issues/459
-  - Retro
-    - HTML4 that works at Amiga IBrowse, Netsurf, Lynx, etc
-    - At AmigaOS/AROS/MorphOS at 680x0/PPC/x86 uses FreePascal compiled at Amiga, SQLite database, IBrowse webbrowser or other available webbrowser
-    - No drag drop, so showing checkboxes and buttons for moving etc
-    - No SVG or VML, so uses ASCII graphics for drawing lines between cards
-    - At IE6, uses VML vector graphics for drawing lines between cards
-    - No idea how to support Netscape or IE3, because they do not support submit form buttons
-  - Modern features, when browser supports it
-    - Rounded corners with CSS, that is [original WeKan feature from 2022-02-06](https://github.com/wekan/wekan/issues/4326)
-      - Not using original Wami feature rounded corners for retro browsers with transparent corner GIF image from [2025-06-19](https://github.com/wekan/wami/commit/60a6d583#diff-55eb6b0b766ec41c008ef615b2f1d3e24ba16b8c8ba549a84c5e73e2ab54344bR15-R17) and [2025-06-20](https://github.com/wekan/wami/commit/31ba33b37ab4b867fd2e344bf5ad004085745cb4) because it would require GIF image for every color
-    - Drag drop
-    - There will be custom color selection from color wheel for font and background color. Or trying to calculate colors that are visible enough.
-  - Future, when browser and device supports it
-    - Touch drag multiple cards at once with many fingers using https://interactjs.io . This is [original Wami feature from 2025-03-27](https://github.com/wekan/wami/commit/5ef07efeac081c372c5e389eb9e6d80704a2614f), no other kanban has it yet.
-- No migrations
-  - Use directly any existing database structure, with general card convert proxy:
-    - WeKan any old and new version structure MongoDB 3, 6, 8 etc
-    - SQLite. Uses database structure of MongoDB to SQLite migration script https://github.com/wekan/minio-metadata
-    - Kanboard SQLite
-    - Trello API. Newest Trello has new design:
-      - 2025-05-21 Email Inbox. WeKan does not have this yet.
-      - 2025-02 Complete Card Checkbox. [WeKan does not have this yet](https://github.com/wekan/wekan/issues/5818)
-      - 2021-02 New board button position at top, copied from [original WeKan feature from 2018-09-28]( https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v1511-2018-09-28-wekan-edge-release)
-      - 2025-02 Mirror Card, copied from [original WeKan feature Linked Cards from 2018-04-18](https://github.com/wekan/wekan/pull/1592), discussed at [WeKan issue 5683](https://github.com/wekan/wekan/issues/5683)
-      - 2021-02 Map Card, copied from [original WeKan feature request from 2017-01-06](https://github.com/wekan/wekan/issues/755)
-    - Jira API. Newest Jira at 2025-06-29 has UI design copied from ClickUp, where is left sidebar menu.
-    - ClickUp API
-    - etc
-  - Detects what database is used
-  - Detects database structure
-  - Detects OpenAPI structure
-  - Detects JSON structure
-  - Can add additional fields to any structure
-  - Can save to any structure
-  - Import/Export/Sync anything
-  - Takes care of rate limits and errors of each API. Sensible default settings, and possibility change settings for rate limit etc.
-- Have Wami repo issues mirrored at many places
-  - GitHub, original location
-  - Fossil SCM, so cloning repo also clones issues fast. There is no rate limits at downloading issues with Fossil SCM, like there is at GitHub. Fossil SCM stores repo to SQLite file, so it's possible to use it with SQLite command also at Amiga etc.
-  - Gitea
-  - Issues with https://github.com/git-bug/git-bug
+It's possible to pay for features and fixes at https://wekan.fi/commercial-support/
 
-## Contributing to design
+Recent replies for questions about development progress:
 
-- Feature Request: System options to GDPR compliance https://github.com/wekan/wekan/issues/5820
-- Question: Is there a way to bulk remove labels https://github.com/wekan/wekan/issues/5819
+- 2025-07-01
+  - From: A
+    - Q:Mass export of WeKan 5.88 to newest WeKan, without a need to map users
+      - A: There will be migrations from all WeKan versions to Wami
+    - Q: SAML-based Single Sign-On (SSO) so that users can log in with their Windows credentials. Are there any specific configurations we should apply when enabling SAML via the Helm Chart?
+      - A: Would this work? https://github.com/wekan/wekan/issues/5758
+  - Q: Feature Request: Ability to have different List names and List colors at each Swimlane, and ability to move one list at one swimlane to different swimlane
+    - A: Will be in this new WeKan version that is Wami. In Progress.
+  - Q:Can't access attachments (Access Denied) https://github.com/wekan/wekan/issues/5064#issuecomment-3020632000
+    - A: Attachments will work at upcoming WeKan version Wami
 
-[Progress of Paid Features](ProgressOfPaidFeatures.md)
