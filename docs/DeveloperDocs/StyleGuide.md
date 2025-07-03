@@ -1,6 +1,6 @@
 ## Style Guide
 
-Definitions
+### Definitions
 
 - WeKan is Open Source kanban software. There are many different versions of WeKan for many platforms:
   - Meteor 2
@@ -16,7 +16,7 @@ Definitions
   - Many more
     - https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/WeKan-Multiverse-Roadmap.md
 
-Anybrowser-style, designed for WeKan development
+### Anybrowser-style, designed for WeKan development
 
 - To be accessible to any user, pages need to be visible at any browser
   - This is working already with code at https://github.com/wekan/wami/blob/main/wekan.pas
@@ -24,7 +24,7 @@ Anybrowser-style, designed for WeKan development
   - with minimal amount of browserside code
   - https://github.com/howinfo/howinfo/wiki/Design#should-we-design-for-iffy-internet
 
-Progressive enhancement
+### Progressive enhancement
 
   - https://www.w3.org/wiki/Graceful_degradation_versus_progressive_enhancement
   - No browser detection by user agent etc. All code for all browsers included.
@@ -46,12 +46,12 @@ Progressive enhancement
     - IE6: VML
     - Netsurf/Chromium/etc: SVG
 
-Not supported browsers
+### Not supported browsers
 
 - Netscape, IE3
 - Because no form submit button feature
 
-Supported browsers
+### Supported browsers
 
 - Maintained browsers
   - IBrowse https://www.ibrowse-dev.net for AmigaOS® 3.0, 3.1, 3.1.4, 3.2, 3.5, 3.9, 4.1FE and MorphOS
@@ -65,7 +65,7 @@ Supported browsers
   - https://github.com/wekan/wekan/blob/main/docs/Browsers/Browser-compatibility-matrix.md has what is supported by Meteor 2. Wami supports Anybrowser.
   - https://github.com/howinfo/howinfo/wiki/Browser
 
-Accessibility
+### Accessibility
 
 - [PRs very welcome](MakingPullRequest.md) for accessibility improvements at https://github.com/wekan/wami/pulls
   - Accessibility related comments are at code at https://github.com/wekan/wami/blob/main/wekan.pas
@@ -79,7 +79,7 @@ Accessibility
 - Every webpage is tested with accessibility browser extensions
 - Correctly visible colors
 
-Minimap
+### Minimap
 
 - Add minimap, like at some games there is.
 - This is original Wami feature, no other kanban has minimap.
@@ -87,7 +87,7 @@ Minimap
 - From minimap it's possible to move to other parts of board.
 - If there is Javascript support, load only visible part of board, and when scrolling, load more cards when that part of board becomes visible.
 
-Example Supported HTML4 code
+### Example Supported HTML4 code
 
 <pre>
 // Example: Add(BoardIcon('At touchscreen', 1, 'white', 'blue'));
@@ -117,12 +117,11 @@ begin
 end;
 <pre>
 
-HTML4 tags to use first, to make visible at all browsers
+### HTML4 tags to use first, to make visible at all browsers
 
-<pre>
 - Use only one table. No nested tables, no merged cells, no split cells.
 - table tbody tr td
-- <font size="4" face="arial" color="#000000" bgcolor="#FFFFFF">Text</font>
+- &lt;font size="4" face="arial" color="#000000" bgcolor="#FFFFFF"&rt;Text&lt;/font&rt;
 - border="0"
 - tabindex="1"
 - height="80" width="20"
@@ -132,9 +131,8 @@ HTML4 tags to use first, to make visible at all browsers
 - height="20"
 - HTML form elements, like checklists, submit buttons
 - There is upload example at wekan.pas
-</pre>
 
-These only work at modern browsers, so use only if it looks similar with above HTML4 tags
+### These only work at modern browsers, so use only if it looks similar with above HTML4 tags
 
 - div
 - style
