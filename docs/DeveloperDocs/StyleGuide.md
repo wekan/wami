@@ -67,8 +67,9 @@ Supported browsers
 
 Accessibility
 
-- PRs very welcome for accessibility improvements at https://github.com/wekan/wami/pulls
+- [PRs very welcome](MakingPullRequest.md) for accessibility improvements at https://github.com/wekan/wami/pulls
   - Accessibility related comments are at code at https://github.com/wekan/wami/blob/main/wekan.pas
+  - Before sending PR, required is to test with all above mentioned supported browsers, that pages are visible and all features work.
 - To be accessible to any user, pages need to be visible at any browser. Wami has Anybrowser, Meteor 2 does not have.
 - Accessibility links at https://github.com/wekan/wekan/issues/459
 - Use only one table. No nested tables, those do not work with screen readers. Do not use merged of split cells.
@@ -85,3 +86,7 @@ Minimap
 - So visible part of WeKan kanban board is loaded immediately, with minimal amount of browserside code.
 - From minimap it's possible to move to other parts of board.
 - If there is Javascript support, load only visible part of board, and when scrolling, load more cards when that part of board becomes visible.
+
+Supported HTML4 code
+
+-
