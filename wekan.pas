@@ -460,6 +460,8 @@ begin
   aResponse.Content := '';
   with aResponse.Contents do
   begin
+    // This All Boards page has been tested to be visible at: Amiga IBrowse, FreeDOS Dillo, Linux Dillo/Netsurf/Chrome'
+    // TODO: At IBrowse, cards are at 1 list only. Change to be at different lists.
     Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
     Add('<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">');
     Add('<head>');
@@ -878,11 +880,12 @@ begin
   aResponse.Content := '';
   with aResponse.Contents do
   begin
+    // This calendar has been tested to be visible at: Amiga IBrowse, FreeDOS Dillo, Linux Dillo/Netsurf/Chrome
+    //
     // For accessibility, use only one table. Not nested table. Avoid merged or split cells.
     // Consider Alternative Views: For calendars, offer a "list view" or other simplified
     // representations that are inherently more linear and accessible for assistive technology users.
     //
-    // This calendar has been tested to be visible at: Amiga IBrowse, FreeDOS Dillo, Linux Dillo/Netsurf/Chrome
     Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">');
     Add('<html lang="en">');
     Add('<head>');
