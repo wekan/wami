@@ -67,11 +67,16 @@ Supported browsers
 
 Accessibility
 
-- To be accessible to any user, pages need to be visible at any browser.
+- PRs very welcome for accessibility improvements at https://github.com/wekan/wami/pulls
+  - Accessibility related comments are at code at https://github.com/wekan/wami/blob/main/wekan.pas
+- To be accessible to any user, pages need to be visible at any browser. Wami has Anybrowser, Meteor 2 does not have.
 - Accessibility links at https://github.com/wekan/wekan/issues/459
 - Use only one table. No nested tables, those do not work with screen readers. Do not use merged of split cells.
 - Semantic HTML https://developer.mozilla.org/en-US/docs/Glossary/Semantics
 - There will be custom color selection from color wheel for font and background color. Or trying to calculate colors that are visible enough.
+- Tab order that works for screenreaders and keyboard navigation
+- Every webpage is tested with accessibility browser extensions
+- Correctly visible colors
 
 Minimap
 
