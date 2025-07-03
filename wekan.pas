@@ -881,6 +881,8 @@ begin
     // For accessibility, use only one table. Not nested table. Avoid merged or split cells.
     // Consider Alternative Views: For calendars, offer a "list view" or other simplified
     // representations that are inherently more linear and accessible for assistive technology users.
+    //
+    // This calendar has been tested to be visible at: Amiga IBrowse, FreeDOS Dillo, Linux Dillo/Netsurf/Chrome
     Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">');
     Add('<html lang="en">');
     Add('<head>');
@@ -896,7 +898,7 @@ begin
     Add('    caption    { font-size: 1.5em; margin-bottom: 10px; font-weight: bold; text-align: left; }');
     Add('  </style>');
     Add('</head>');
-    Add('<body>');
+    Add('<body bgcolor="#FFFFFF">');
     Add('<p><a href="../">All Pages</a></p>');
     Add('<h1><font face="arial">July 2025</font></h1>');
     Add('<table summary="This table displays the calendar. Days of the week are column headers, and dates are listed under them." width="100%" border-collapse="collapse" margin-bottom="20" border="1" cellpadding="5" cellspacing="0" id="calendartable">');
