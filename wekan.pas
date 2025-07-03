@@ -897,8 +897,8 @@ begin
     Add('  </style>');
     Add('</head>');
     Add('<body>');
-    Add('<h1><font face="arial">July 2025 Calendar</font></h1>');
-    Add('<table summary="This table displays the calendar for July 2025. Days of the week are column headers, and dates are listed under them." width=" 100%" border-collapse="collapse" margin-bottom="20" border="1" cellspacing="0" cellpadding="4">');
+    Add('<h1><font face="arial">July 2025</font></h1>');
+    Add('<table summary="This table displays the calendar. Days of the week are column headers, and dates are listed under them." width="100%" border-collapse="collapse" margin-bottom="20" border="1" cellpadding="5" cellspacing="0" id="calendartable">');
     Add('  <caption><font size="4" face="arial">July 2025</font></caption>');
     Add('  <thead>');
     Add('    <tr>');
@@ -916,7 +916,7 @@ begin
     Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>');
     Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">1</font></td>');
     Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">2</font></td>');
-    Add('      <td class="today" border="1" padding="8" align="center" bgcolor="#d1e7dd" border="2"><b><font size="4" face="arial">3</font></b></td>');
+    Add('      <td class="today" border="3" padding="8" align="center" bgcolor="#d1e7dd" border="2"><b><font size="4" face="arial">3</font></b></td>');
     Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">4</font></td>');
     Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">5</font></td>');
     Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">6</font></td>');
