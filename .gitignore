@@ -37,6 +37,7 @@ ehthumbs.db
 /fp.*
 /wekan
 /wekan.o
+/wekan.db
 # Helm chart
 # Chart dependencies
 /helm/wekan/**/*.tgz
