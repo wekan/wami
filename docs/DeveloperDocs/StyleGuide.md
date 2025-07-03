@@ -117,5 +117,7 @@ These only work at modern browsers, so use only if it looks similar with above H
 - Do not use <b>absolute URLs</b> like /css/something.css, that does not work with sub-url
 - This makes possible with Wami:
     - Sub-URL like https://example.com/kanban/
-    - [Multitenancy](https://en.wikipedia.org/wiki/Multitenancy) like having same kanban serve with many different domain URLs for many organizations
-- This is not possible with Meteor, that requires environment setting ROOT_URL. This is only possible with Wami.
+    - [Multitenancy](https://en.wikipedia.org/wiki/Multitenancy)
+      - Like having same kanban instance have many different domain URLs for many organizations
+      - Makes possible to combine many separate MultiSnap WeKan for separate domains to one WeKan https://github.com/wekan/wekan/blob/main/docs/Platforms/FOSS/Snap/Many-Snaps-on-LXC.md
+      - This is not possible with Meteor, that requires environment setting ROOT_URL. This is only possible with Wami.
