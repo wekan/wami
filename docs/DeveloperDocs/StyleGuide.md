@@ -67,7 +67,7 @@
 
 ### Accessibility
 
-- [PRs very welcome](MakingPullRequest.md) for accessibility improvements at https://github.com/wekan/wami/pulls
+- [PRs welcome](MakingPullRequest.md) for accessibility improvements at https://github.com/wekan/wami/pulls
   - Accessibility related comments are at code at https://github.com/wekan/wami/blob/main/wekan.pas
   - Before sending PR, required is to test with all above mentioned supported browsers, that pages are visible and all features work.
 - To be accessible to any user, pages need to be visible at any browser. Wami has Anybrowser, Meteor 2 does not have.
