@@ -4,6 +4,7 @@
   - Win32 and Win64: Win2k, WinXP and newer. ReactOS 32bit and 64bit. Wine.
   - macOS PPC/x86_84/Apple Silicon, where FreePascal is available.
   - Linux
+  - Rasperry Pi armhf/arm64, try to have also with Snap and Docker
   - FreeBSD
   - AmigaOS 3.x/4.x, MorphOS, AROS for 680x0/PPC/x86/x86_64
   - Haiku
