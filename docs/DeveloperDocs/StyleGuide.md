@@ -110,10 +110,10 @@ These only work at modern browsers, so use only if it looks similar with above H
 
 ## Optional CSS and Javascript code for modern browsers
 
-- At wami/public/js/ and wami/public/css, used with relative URLs.
+- At wami/public/js/ and wami/public/css, used with <b>relative URLs</b>.
 - &lt;link rel="stylesheet" type="text/css" href="css/interact.css"&gt;
 - &lt;script src="js/interact.js"&gt;&lt;/script&gt;
-- Do not use fixed URLs like /css/something.css, that does not work with sub-url
+- Do not use <b>fixed URLs</b> like /css/something.css, that does not work with sub-url
 - This makes possible with Wami:
     - Sub-URL like https://example.com/kanban/
     - [Multitenancy](https://en.wikipedia.org/wiki/Multitenancy) like having same kanban serve with many different domain URLs for many organizations
