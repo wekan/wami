@@ -897,7 +897,7 @@ begin
     Add('  </style>');
     Add('</head>');
     Add('<body>');
-    Add('<h1>July 2025 Calendar</h1>');
+    Add('<h1><font face="arial">July 2025 Calendar</font></h1>');
     Add('<table summary="This table displays the calendar for July 2025. Days of the week are column headers, and dates are listed under them." width=" 100%" border-collapse="collapse" margin-bottom="20" border="1" cellspacing="0" cellpadding="4">');
     Add('  <caption><font size="4" face="arial">July 2025</font></caption>');
     Add('  <thead>');
