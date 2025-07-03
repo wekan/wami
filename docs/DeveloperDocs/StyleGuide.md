@@ -2,7 +2,7 @@
 
 ### Definitions
 
-- WeKan is Open Source kanban software. There are many different versions of WeKan for many platforms:
+- WeKan is Open Source kanban software. There are many different versions of WeKan:
   - Meteor 2
     - Previous version of WeKan
     - https://github.com/wekan/wekan
@@ -13,7 +13,7 @@
     - https://github.com/wekan/wami
     - Anybrowser
     - Accessibility
-  - Many more
+  - Many more versions of WeKan for many platforms:
     - https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/WeKan-Multiverse-Roadmap.md
 
 ### Anybrowser-style, designed for WeKan development
