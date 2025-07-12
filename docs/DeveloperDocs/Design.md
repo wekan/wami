@@ -25,7 +25,7 @@
 - Git Branching style for data
   - https://github.com/howinfo/howinfo/wiki/Database#git-branching-style-for-data
   - Duplicate Board works immeditely, because it's git branch of same data. Not need to copy hundreds of cards slowly one card a time.
-- Retro Modern Future is [original feature of Wami 2025-06-29](https://github.com/wekan/wami/commit/6758c310) from [xet7](https://github.com/xet7). Later, [xet7](https://github.com/xet7) at 2025-07-12 found similar words used at https://www.commodore.net/faq , maybe they did see this Wami page, or came up with similar idea.
+- Retro Modern Future is [original feature of Wami 2025-06-29](https://github.com/wekan/wami/commit/6758c310) from [xet7](https://github.com/xet7). Later, [xet7](https://github.com/xet7) at 2025-07-12 found similar words used at https://www.commodore.net/faq , maybe they did see this Wami page, or they came up with similar idea.
 - Retro Modern Future
   - All browsers with same code, this can be seen working already with code at https://github.com/wekan/wami/blob/main/wekan.pas, where same code works and shows visible page at FreeDOS Dillo, Amiga IBrowse, Chrome etc, using some additional features where available. No feature detection. If browser adds new features, they work in that browser. Meteor 2 WeKan is not visible in all browsers, it requires modern browser with Javascript support.
   - Designed for iffy Internet, with minimal amount of browserside code, does not require Javascript, but there is additional features when is Javascript support https://github.com/howinfo/howinfo/wiki/Design#should-we-design-for-iffy-internet
