@@ -11,8 +11,20 @@
   - Wami
     - Current version of WeKan, in very active development
     - https://github.com/wekan/wami
-    - Anybrowser
     - Accessibility
+    - Anybrowser: Works at Netsurf etc, required only low amount of RAM and CPU
+    - Anyserver: Works at Amiga etc, requires only low amount of RAM and CPU
+    - Against planned obsolescence and electronic waste, works also at old OS and old computer
+        - https://en.wikipedia.org/wiki/Planned_obsolescence
+        - https://en.wikipedia.org/wiki/Electronic_waste
+        - Please do not send working computers to electronic waste. It has taken a lot of natural resources to create a computer.
+    - Against expensive data centers and expensive servers
+      - Please do not use AI servers that uses a lot of electricity, CPU, RAM and clean water
+        - https://www.youtube.com/watch?v=8enXRDlWguU
+        - Please let people have the life essential clean water and electricity, and not use that for datacenters, because we are running out of land, electricity and water
+        - Please do not build more datacenters. Instead, make your datacenters and code more energy efficient.
+      - Use only AI that is designed for low RAM and CPU usage
+      - Please try to use computers that use smallest amount of electricity
   - Many more versions of WeKan for many platforms:
     - https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/WeKan-Multiverse-Roadmap.md
 
