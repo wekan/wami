@@ -5,7 +5,7 @@
 - https://en.wikipedia.org/wiki/Kanban
 - Every kanban software usually implements similar features, original or inspired by some other kanban software
 
-## Trello copied from WeKan
+### Trello copied from WeKan
 
 Existing WeKan features
 
@@ -20,7 +20,7 @@ Existing WeKan ideas, that are not yet implemented in WeKan
 - 2021-02 Map Card, copied from [original WeKan feature request from 2017-01-06](https://github.com/wekan/wekan/issues/755).
 - 2025-01-28 Sync Jira Lists to Trello, copied from [original WeKan Multiverse from 2022-07-14](https://boards.wekan.team/b/JctQEtkayWXTTJyzt/wekan-multiverse)
 
-## Trello features, that are not yet implemented in WeKan
+### Trello features, that are not yet implemented in WeKan
 
 - 2025-05-21 Email Inbox
 - 2025-02 Complete Card Checkbox: https://github.com/wekan/wekan/issues/5818
@@ -28,6 +28,6 @@ Existing WeKan ideas, that are not yet implemented in WeKan
 - 2018 Butler Scheduled and Repeating Tasks: https://github.com/wekan/wekan/issues/5825 . [WeKan added IFTTT Rules at 2018-09-16](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v147-2018-09-16-wekan-release)
 - 2016-12 Card Repeater PowerUp: Copy cards daily/weekly/monthly/yearly
 
-## Jira copied design from ClickUp
+### Jira copied design from ClickUp
 
 - 2025-06-29 Jira has UI design copied from ClickUp, where is left sidebar menu.
