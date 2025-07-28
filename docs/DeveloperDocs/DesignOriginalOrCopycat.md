@@ -37,7 +37,7 @@ Existing WeKan ideas, that are not yet implemented in WeKan
 - 2025-05-21 Email Inbox
 - 2025-02 Complete Card Checkbox: https://github.com/wekan/wekan/issues/5818
 - 2021-05 Workspaces
-- 2018 Butler Scheduled and Repeating Tasks: https://github.com/wekan/wekan/issues/5825 . [WeKan added IFTTT Rules at 2018-09-16](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v147-2018-09-16-wekan-release), but not yet repeating or scheduled.
+- 2018 Butler Scheduled and Repeating Tasks: https://github.com/wekan/wekan/issues/5825 . [WeKan added IFTTT Rules at 2018-09-16](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v147-2018-09-16-wekan-release), but not yet scheduled or repeating IFTTT Rules.
 - 2016-12 Card Repeater PowerUp: Copy cards daily/weekly/monthly/yearly
 
 ### Jira copied design from ClickUp
