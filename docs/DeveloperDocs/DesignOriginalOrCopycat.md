@@ -28,6 +28,11 @@ Existing WeKan ideas, that are not yet implemented in WeKan
 - 2018 Butler Scheduled and Repeating Tasks: https://github.com/wekan/wekan/issues/5825 . [WeKan added IFTTT Rules at 2018-09-16](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v147-2018-09-16-wekan-release), but not yet repeating or scheduled.
 - 2016-12 Card Repeater PowerUp: Copy cards daily/weekly/monthly/yearly
 
+### WeKan copied from Trello
+
+- WeKan UI redesign was done at 2015-01-20 [after DMCA from Trello](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before)
+- But after WeKan original redesign, Trello started copying from original WeKan design
+
 ### Jira copied design from ClickUp
 
 - 2025-06-29 Jira has UI design copied from ClickUp, where is left sidebar menu.
