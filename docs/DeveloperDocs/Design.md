@@ -49,14 +49,8 @@
     - WeKan any old and new version structure MongoDB 3, 6, 8 etc
     - SQLite. Uses database structure of MongoDB to SQLite migration script https://github.com/wekan/minio-metadata
     - Kanboard SQLite
-    - Trello API. Newest Trello has new design:
-      - 2025-05-21 Email Inbox. WeKan does not have this yet.
-      - 2025-04 Opened card has comments at right, copied from [original WeKan feature Maximize Card 2021-06-14](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v535-2021-06-14-wekan-release). Trello does not have WeKan feature Minimize Card.
-      - 2025-02 Complete Card Checkbox. [WeKan does not have this yet](https://github.com/wekan/wekan/issues/5818)
-      - 2021-02 New board button position at top, copied from [original WeKan feature from 2018-09-28]( https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v1511-2018-09-28-wekan-edge-release)
-      - 2025-02 Mirror Card, copied from [original WeKan feature Linked Cards from 2018-04-18](https://github.com/wekan/wekan/pull/1592), discussed at [WeKan issue 5683](https://github.com/wekan/wekan/issues/5683)
-      - 2021-02 Map Card, copied from [original WeKan feature request from 2017-01-06](https://github.com/wekan/wekan/issues/755)
-    - Jira API. Newest Jira at 2025-06-29 has UI design copied from ClickUp, where is left sidebar menu.
+    - Trello API
+    - Jira API
     - ClickUp API
     - etc
   - Detects what database is used
