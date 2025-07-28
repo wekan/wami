@@ -19,7 +19,10 @@
 - Many of these may be needed to be able to import from Trello to WeKan
 - 2025-05-21 Email Inbox
 - 2025-02 Complete Card Checkbox: https://github.com/wekan/wekan/issues/5818
+- 2021-05 Workspaces
 - 2021-02 Map Card: https://github.com/wekan/wekan/issues/755
+- 2018 Butler Scheduled and Repeating Tasks: https://github.com/wekan/wekan/issues/5825
+- 2016-12 Card Repeater PowerUp: Copy cards daily/weekly/monthly/yearly
 
 ## Jira copied design from ClickUp
 
