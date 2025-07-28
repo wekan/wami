@@ -1,6 +1,6 @@
 # Design: Original or Copycat
 
-## Kanban originally from Toyota paper cards
+### Kanban originally from Toyota paper cards
 
 - https://en.wikipedia.org/wiki/Kanban
 - Every kanban software usually implements similar features, original or inspired by some other kanban software
