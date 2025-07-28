@@ -5,20 +5,32 @@
 - https://en.wikipedia.org/wiki/Kanban
 - Every kanban software usually implements similar features, original or inspired by some other kanban software
 
-### Trello copied from WeKan
+### WeKan copied design from Trello, then WeKan did redesign, then Trello copied design from WeKan
+
+- WeKan has all original developed Open Source MIT licensed code, that is different than Trello propietary code. 
+- WeKan UI redesign was done at 2015-01-20 [after DMCA from Trello](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before)
+  - by original WeKan creator [mquandalle](https://github.com/mquandalle)
+    - [Original redesign](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before)
+  - by [xet7](https://github.com/xet7) current maintainer of WeKan
+    - [Improvements to original design](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Design-Principles.md)
+    - [Monkey Proof Software](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Monkey-Proof-Software.md)
+    - [New original Wami design at 2025](https://github.com/wekan/wami/blob/main/docs/DeveloperDocs/Design.md)
+- Then Trello started copying from original WeKan design
+
+### Trello copied design from WeKan
 
 Existing WeKan features
 
 - 2025-04 Opened card has comments at right, copied from [original WeKan feature Maximize Card 2021-06-14](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v535-2021-06-14-wekan-release). Trello does not have WeKan feature Minimize Card.
   - https://community.atlassian.com/forums/Trello-questions/comments-in-the-ticket-on-the-right/qaq-p/3029030
   - https://community.atlassian.com/forums/Trello-questions/Trello-card-comments-now-appear-in-a-side-tab-how-to-go-back-to/qaq-p/3003380
-- 2021-02 New board button position at top, copied from [original WeKan feature from 2018-09-28](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v1511-2018-09-28-wekan-edge-release)
 - 2025-02 Mirror Card, copied from [original WeKan feature Linked Cards from 2018-04-18](https://github.com/wekan/wekan/pull/1592), discussed at [WeKan issue 5683](https://github.com/wekan/wekan/issues/5683)
+- 2021-02 New board button position at top, copied from [original WeKan feature from 2018-09-28](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v1511-2018-09-28-wekan-edge-release)
 
 Existing WeKan ideas, that are not yet implemented in WeKan
 
-- 2021-02 Map Card, copied from [original WeKan feature request from 2017-01-06](https://github.com/wekan/wekan/issues/755).
 - 2025-01-28 Sync Jira Lists to Trello, copied from [original WeKan Multiverse from 2022-07-14](https://boards.wekan.team/b/JctQEtkayWXTTJyzt/wekan-multiverse)
+- 2021-02 Map Card, copied from [original WeKan feature request from 2017-01-06](https://github.com/wekan/wekan/issues/755).
 
 ### Trello features, that are not yet implemented in WeKan
 
@@ -27,16 +39,6 @@ Existing WeKan ideas, that are not yet implemented in WeKan
 - 2021-05 Workspaces
 - 2018 Butler Scheduled and Repeating Tasks: https://github.com/wekan/wekan/issues/5825 . [WeKan added IFTTT Rules at 2018-09-16](https://github.com/wekan/wekan/blob/main/CHANGELOG.md#v147-2018-09-16-wekan-release), but not yet repeating or scheduled.
 - 2016-12 Card Repeater PowerUp: Copy cards daily/weekly/monthly/yearly
-
-### WeKan copied from Trello, then WeKan did redesign, then Trello copied from WeKan
-
-- WeKan UI redesign was done at 2015-01-20 [after DMCA from Trello](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before)
-  - by original WeKan creator [mquandalle](https://github.com/mquandalle)
-    - [Original redesign](https://github.com/wekan/wekan/blob/main/docs/FAQ/FAQ.md#werent-you-called-libreboard-before) 
-  - by [xet7](https://github.com/xet7) current maintainer of WeKan
-    - [Improvements to original design](https://github.com/wekan/wekan/blob/main/docs/DeveloperDocs/Design-Principles.md)
-    - [New original Wami design at 2025](https://github.com/wekan/wami/blob/main/docs/DeveloperDocs/Design.md)
-- Then Trello started copying from original WeKan design
 
 ### Jira copied design from ClickUp
 
