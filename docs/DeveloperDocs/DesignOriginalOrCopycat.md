@@ -14,6 +14,7 @@
 
 ## WeKan has not yet implemented these Trello features
 
+- Many of these may be needed to be able to import from Trello to WeKan
 - 2025-05-21 Email Inbox
 - 2025-02 Complete Card Checkbox: https://github.com/wekan/wekan/issues/5818
 - 2021-02 Map Card: https://github.com/wekan/wekan/issues/755
