@@ -6,10 +6,11 @@ uses
   {$IFDEF UNIX}
   cthreads, cmem,
   {$ENDIF}
-  SysUtils, fphttpapp, HTTPDefs, httproute, Classes; // Add Classes unit
+  SysUtils, fphttpapp, HTTPDefs, httproute, Classes;
 
 var
   MongoUrlValue: string;
+  CurrentUser: string; // Store current logged in user
 
 function WebBrowserName(const UserAgent: string): String;
 // Ubuntu Chrome: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
@@ -111,6 +112,147 @@ begin
             '</div>' + LineEnding;
 end;
 
+function InitializeUserStorage: Boolean;
+begin
+  // Create users directory if it doesn't exist
+  if not DirectoryExists('wekandata') then
+  begin
+    CreateDir('wekandata');
+    Writeln('Created wekandata directory');
+  end;
+
+  // Create users.csv file if it doesn't exist
+  if not FileExists('wekandata/users.csv') then
+  begin
+    with TStringList.Create do
+    try
+      Add('admin:admin:admin@example.com:false'); // Default admin user
+      SaveToFile('wekandata/users.csv');
+      Writeln('Created users file with default admin account');
+    finally
+      Free;
+    end;
+  end;
+
+  Result := True;
+  Writeln('File-based user storage initialized successfully');
+end;
+
+function RegisterUser(const Username, Email, Password: string): Boolean;
+var
+  UsersFile: TStringList;
+  UserLine: string;
+  i: Integer;
+begin
+  Result := False;
+  try
+    UsersFile := TStringList.Create;
+    try
+      if FileExists('wekandata/users.csv') then
+        UsersFile.LoadFromFile('wekandata/users.csv');
+      // Check if user already exists
+      for i := 0 to UsersFile.Count - 1 do
+      begin
+        if Pos(Username + ':', UsersFile[i]) = 1 then
+        begin
+          Writeln('User already exists: ' + Username);
+          Exit;
+        end;
+      end;
+      // Add new user (format: username:password:email:isAdmin)
+      UserLine := Username + ':' + Password + ':' + Email + ':false';
+      UsersFile.Add(UserLine);
+      UsersFile.SaveToFile('wekandata/users.csv');
+      Writeln('User registered successfully: ' + Username);
+      Result := True;
+    finally
+      UsersFile.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      Writeln('Error registering user: ' + E.Message);
+      Result := False;
+    end;
+  end;
+end;
+
+function AuthenticateUser(const Username, Password: string): Boolean;
+var
+  UsersFile: TStringList;
+  UserLine: string;
+  i: Integer;
+  Parts: TStringArray;
+begin
+  Result := False;
+  try
+    UsersFile := TStringList.Create;
+    try
+      if FileExists('wekandata/users.csv') then
+        UsersFile.LoadFromFile('wekandata/users.csv');
+      // Check each user line
+      for i := 0 to UsersFile.Count - 1 do
+      begin
+        UserLine := UsersFile[i];
+        if Pos(Username + ':', UserLine) = 1 then
+        begin
+          // Parse user line (format: username:password:email:isAdmin)
+          Parts := UserLine.Split([':']);
+          if (Length(Parts) >= 2) and (Parts[1] = Password) then
+          begin
+            Result := True;
+            CurrentUser := Username;
+            Writeln('User authenticated successfully: ' + Username);
+            Exit;
+          end;
+        end;
+      end;
+      Writeln('Authentication failed for: ' + Username);
+    finally
+      UsersFile.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      Writeln('Error authenticating user: ' + E.Message);
+      Result := False;
+    end;
+  end;
+end;
+
+function UserExists(const Username: string): Boolean;
+var
+  UsersFile: TStringList;
+  i: Integer;
+begin
+  Result := False;
+  try
+    UsersFile := TStringList.Create;
+    try
+      if FileExists('wekandata/users.csv') then
+        UsersFile.LoadFromFile('wekandata/users.csv');
+      // Check if user exists
+      for i := 0 to UsersFile.Count - 1 do
+      begin
+        if Pos(Username + ':', UsersFile[i]) = 1 then
+        begin
+          Result := True;
+          Writeln('User already exists: ' + Username);
+          Exit;
+        end;
+      end;
+    finally
+      UsersFile.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      Writeln('Error checking if user exists: ' + E.Message);
+      Result := False;
+    end;
+  end;
+end;
+
 procedure catchallEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
   aResponse.Content:='This endpoint is not available';
@@ -164,7 +306,6 @@ begin
     // Netsurf: Supports document.write, but window size: undefined x undefined
     // IBrowse: Supports document.write, but does not show window size text at all
     Add('</script>');
-
     Add('<p><a href=".">All Pages</a> - <a href="multidrag/">Multidrag</a></p>');
     Add('<p><b>Login</b>: <a href="sign-in">Sign In</a>');
     Add(' - <a href="sign-up">Sign Up</a>');
@@ -178,7 +319,8 @@ begin
     Add(' - <a href="import">Import</a></p>');
     Add('<p><b><a href="calendar">Calendar</a></b></p>');
     Add('<p><b>Upload</b>: <a href="upload">Upload</a></p>');
-    Add('<p><b>Search</b>: <a href="global-search">Global Search</a>');
+    Add('<p><b>Search</b>: <a href="global-search">Global Search</a></p>');
+    Add('<p><b>Accessibility</b>: <a href="accessibility">Accessibility Features</a></p>');
     Add('<p><b>Admin</b>: <a href="broken-cards">Broken Cards</a>');
     Add(' - <a href="setting">Setting</a>');
     Add(' - <a href="information">Information</a>');
@@ -206,73 +348,327 @@ begin
 end;
 
 procedure loginEndpoint(aRequest: TRequest; aResponse: TResponse);
+var
+  Username, Password: string;
+  LoginMessage: string;
 begin
-  aResponse.Content := '';
-  with aResponse.Contents do
+  if aRequest.Method = 'POST' then
   begin
-    Add('<p></p>');
-    Add('<center>');
-    Add('  <table border="0" padding="0" spacing="0" margin="0">');
-    Add('    <tr>');
-    Add('      <td style="background-color: #f7f7f7;">');
-    Add('        <h1 style="font-size: 140%; padding-top: 10px;');
-    Add('                   padding-left: 20px; padding-bottom: 0px;">');
-    Add('          Login');
-    Add('        </h1>');
-    Add('      </td>');
-    Add('    </tr>');
-    Add('    <tr>');
-    Add('      <td style="padding-top: 20px; padding-left: 20px;');
-    Add('                 padding-right: 20px; background-color: white;">');
-    Add('        <form    role="form"');
-    Add('                 novalidate=""');
-    Add('                 action="sign-in"');
-    Add('                 method="POST">');
-    Add('          <label for="select-authentication">');
-    Add('                 Authentication method</label><br>');
-    Add('          <input type="radio"');
-    Add('                 name="select-authentication"');
-    Add('                 value="password"');
-    Add('                 required>');
-    Add('          <label for="auth-password">Password</label><br>');
-    Add('          <input type="radio"');
-    Add('                 name="select-authentication"');
-    Add('                 value="oauth2">');
-    Add('          <label for="auth-oauth2">OAuth2</label><br>');
-    Add('          <input type="radio"');
-    Add('                 name="select-authentication"');
-    Add('                 value="ldap">');
-    Add('          <label for="auth-ldap">LDAP</label><br><br>');
-    Add('          <label for="at-field-username_and_email">');
-    Add('                 Username or Email</label><br>');
-    Add('          <input type="text" size="41"');
-    Add('                 name="username_or_email"');
-    Add('                 placeholder=""');
-    Add('                 autocapitalize="none"');
-    Add('                 autocorrect="off"');
-    Add('                 required><br><br>');
-    Add('          <label for="at-field-password">Password</label><br />');
-    Add('          <input type="password"');
-    Add('                 size="41"');
-    Add('                 name="password"');
-    Add('                 placeholder=""');
-    Add('                 autocapitalize="none"');
-    Add('                 autocorrect="off"');
-    Add('                 required><br />');
-    Add('          <input type="submit"');
-    Add('                 name="login"');
-    Add('                 value="Login"');
-    Add('       </form>');
-    Add('       <p><a href="sign-up">Register</a></p>');
-    Add('       <p><a href="forgot-password">Forgot password</a></p>');
-    Add('    </td>');
-    Add('  </tr>');
-    Add('  </table>');
-    Add('</center>');
+    // Handle form submission
+    Username := aRequest.ContentFields.Values['username'];
+    Password := aRequest.ContentFields.Values['password'];
+    // Basic validation
+    if (Username = '') or (Password = '') then
+    begin
+      LoginMessage := '<p style="color: red;">Username and password are required.</p>';
+    end
+    else
+    begin
+      // Authenticate user against database
+      if AuthenticateUser(Username, Password) then
+      begin
+        // Login successful, redirect to All Boards page
+        aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                            '<html><head><title>Login Successful - WeKan</title>' + LineEnding +
+                            '<meta http-equiv="refresh" content="2;url=allboards">' + LineEnding +
+                            '</head><body>' + LineEnding +
+                            '<h1>Login Successful!</h1>' + LineEnding +
+                            '<p>Welcome back, ' + Username + '!</p>' + LineEnding +
+                            '<p>You will be redirected to the All Boards page in 2 seconds...</p>' + LineEnding +
+                            '<p><a href="allboards">Click here if you are not redirected automatically</a></p>' + LineEnding +
+                            '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                            '</body></html>';
+        aResponse.Code := 200;
+        aResponse.ContentType := 'text/html';
+        aResponse.ContentLength := Length(aResponse.Content);
+        aResponse.SendContent;
+        Exit; // Exit early for successful login
+      end
+      else
+      begin
+        LoginMessage := '<p style="color: red;">Invalid username or password. Please try again.</p>';
+      end;
+    end;
+    // If validation failed or authentication failed, show the form again with error message
+    aResponse.Content := '';
+    with aResponse.Contents do
+    begin
+      Add('<p></p>');
+      Add('<center>');
+      Add('  <table border="0" padding="0" spacing="0" margin="0">');
+      Add('    <tr>');
+      Add('      <td style="background-color: #f7f7f7;">');
+      Add('        <h1 style="font-size: 140%; padding-top: 10px;');
+      Add('                   padding-left: 20px; padding-bottom: 0px;">');
+      Add('          Login');
+      Add('        </h1>');
+      Add('      </td>');
+      Add('    </tr>');
+      Add('    <tr>');
+      Add('      <td style="padding-top: 20px; padding-left: 20px;');
+      Add('                 padding-right: 20px; background-color: white;">');
+      Add('        <form    role="form"');
+      Add('                 novalidate');
+      Add('                 action="sign-in"');
+      Add('                 method="POST">');
+      Add('          <div class="form-group">');
+      Add('            <label for="username">Username or Email</label>');
+      Add('            <input type="text"');
+      Add('                   class="form-control"');
+      Add('                   id="username"');
+      Add('                   name="username"');
+      Add('                   value="' + Username + '"');
+      Add('                   placeholder="Enter username or email"');
+      Add('                   required>');
+      Add('          </div>');
+      Add('          <div class="form-group">');
+      Add('            <label for="password">Password</label>');
+      Add('            <input type="password"');
+      Add('                   class="form-control"');
+      Add('                   id="password"');
+      Add('                   name="password"');
+      Add('                   placeholder="Enter password"');
+      Add('                   required>');
+      Add('          </div>');
+      Add('          <button type="submit"');
+      Add('                  class="btn btn-primary btn-block">');
+      Add('            Sign In');
+      Add('          </button>');
+      Add('        </form>');
+      Add(LoginMessage);
+      Add('        <p><a href="sign-up">Need an account? Sign up</a></p>');
+      Add('        <p><a href="forgot-password">Forgot your password?</a></p>');
+      Add('        <p><a href=".">Back to Home</a></p>');
+      Add('      </td>');
+      Add('    </tr>');
+      Add('  </table>');
+      Add('</center>');
+    end;
+  end
+  else
+  begin
+    // Show login form (GET request)
+    aResponse.Content := '';
+    with aResponse.Contents do
+    begin
+      Add('<p></p>');
+      Add('<center>');
+      Add('  <table border="0" padding="0" spacing="0" margin="0">');
+      Add('    <tr>');
+      Add('      <td style="background-color: #f7f7f7;">');
+      Add('        <h1 style="font-size: 140%; padding-top: 10px;');
+      Add('                   padding-left: 20px; padding-bottom: 0px;">');
+      Add('          Login');
+      Add('        </h1>');
+      Add('      </td>');
+      Add('    </tr>');
+      Add('    <tr>');
+      Add('      <td style="padding-top: 20px; padding-left: 20px;');
+      Add('                 padding-right: 20px; background-color: white;">');
+      Add('        <form    role="form"');
+      Add('                 novalidate');
+      Add('                 action="sign-in"');
+      Add('                 method="POST">');
+      Add('          <div class="form-group">');
+      Add('            <label for="username">Username or Email</label>');
+      Add('            <input type="text"');
+      Add('                   class="form-control"');
+      Add('                   id="username"');
+      Add('                   name="username"');
+      Add('                   placeholder="Enter username or email"');
+      Add('                   required>');
+      Add('          </div>');
+      Add('          <div class="form-group">');
+      Add('            <label for="password">Password</label>');
+      Add('            <input type="password"');
+      Add('                   class="form-control"');
+      Add('                   id="password"');
+      Add('                   name="password"');
+      Add('                   placeholder="Enter password"');
+      Add('                   required>');
+      Add('          </div>');
+      Add('          <button type="submit"');
+      Add('                  class="btn btn-primary btn-block">');
+      Add('            Sign In');
+      Add('          </button>');
+      Add('        </form>');
+      Add('        <p><a href="sign-up">Need an account? Sign up</a></p>');
+      Add('        <p><a href="forgot-password">Forgot your password?</a></p>');
+      Add('        <p><a href=".">Back to Home</a></p>');
+      Add('      </td>');
+      Add('    </tr>');
+      Add('  </table>');
+      Add('</center>');
+    end;
   end;
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/html';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure registerEndpoint(aRequest: TRequest; aResponse: TResponse);
+var
+  Username, Email, Password, ConfirmPassword: string;
+  SuccessMessage: string;
+begin
+  if aRequest.Method = 'POST' then
+  begin
+    // Handle form submission
+    Username := aRequest.ContentFields.Values['username'];
+    Email := aRequest.ContentFields.Values['email'];
+    Password := aRequest.ContentFields.Values['password'];
+    ConfirmPassword := aRequest.ContentFields.Values['confirm_password'];
+    // Basic validation
+    if (Username = '') or (Email = '') or (Password = '') then
+    begin
+      SuccessMessage := '<p style="color: red;">All fields are required.</p>';
+    end
+    else if Password <> ConfirmPassword then
+    begin
+      SuccessMessage := '<p style="color: red;">Passwords do not match.</p>';
+    end
+    else if Length(Password) < 6 then
+    begin
+      SuccessMessage := '<p style="color: red;">Password must be at least 6 characters long.</p>';
+    end
+    else if UserExists(Username) then
+    begin
+      SuccessMessage := '<p style="color: red;">Username already exists. Please choose a different username.</p>';
+    end
+    else
+    begin
+      // Register user in database
+      if RegisterUser(Username, Email, Password) then
+      begin
+        // Set current user and redirect to All Boards page
+        CurrentUser := Username;
+        aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                            '<html><head><title>Registration Successful - WeKan</title>' + LineEnding +
+                            '<meta http-equiv="refresh" content="2;url=allboards">' + LineEnding +
+                            '</head><body>' + LineEnding +
+                            '<h1>Registration Successful!</h1>' + LineEnding +
+                            '<p>Welcome, ' + Username + '! Your account has been created successfully.</p>' + LineEnding +
+                            '<p>You will be redirected to the All Boards page in 2 seconds...</p>' + LineEnding +
+                            '<p><a href="allboards">Click here if you are not redirected automatically</a></p>' + LineEnding +
+                            '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                            '</body></html>';
+        aResponse.Code := 200;
+        aResponse.ContentType := 'text/html';
+        aResponse.ContentLength := Length(aResponse.Content);
+        aResponse.SendContent;
+        Exit; // Exit early for successful registration
+      end
+      else
+      begin
+        SuccessMessage := '<p style="color: red;">Failed to create account. Please try again.</p>';
+      end;
+    end;
+    // If validation failed or registration failed, show the form again with error message
+    aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                        '<html><head><title>Sign Up - WeKan</title></head><body>' + LineEnding +
+                        '<h1>Sign Up</h1>' + LineEnding +
+                        SuccessMessage + LineEnding +
+                        '<form action="sign-up" method="POST">' + LineEnding +
+                        '  <label for="username">Username:</label><br>' + LineEnding +
+                        '  <input type="text" id="username" name="username" value="' + Username + '" required><br><br>' + LineEnding +
+                        '  <label for="email">Email:</label><br>' + LineEnding +
+                        '  <input type="email" id="email" name="email" value="' + Email + '" required><br><br>' + LineEnding +
+                        '  <label for="password">Password:</label><br>' + LineEnding +
+                        '  <input type="password" id="password" name="password" required><br><br>' + LineEnding +
+                        '  <label for="confirm_password">Confirm Password:</label><br>' + LineEnding +
+                        '  <input type="password" id="confirm_password" name="confirm_password" required><br><br>' + LineEnding +
+                        '  <input type="submit" value="Sign Up">' + LineEnding +
+                        '</form>' + LineEnding +
+                        '<p><a href="sign-in">Already have an account? Sign in</a></p>' + LineEnding +
+                        '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                        '</body></html>';
+  end
+  else
+  begin
+    // Show registration form (GET request)
+    aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                        '<html><head><title>Sign Up - WeKan</title></head><body>' + LineEnding +
+                        '<h1>Sign Up</h1>' + LineEnding +
+                        '<p>Create a new account:</p>' + LineEnding +
+                        '<form action="sign-up" method="POST">' + LineEnding +
+                        '  <label for="username">Username:</label><br>' + LineEnding +
+                        '  <input type="text" id="username" name="username" required><br><br>' + LineEnding +
+                        '  <label for="email">Email:</label><br>' + LineEnding +
+                        '  <input type="email" id="email" name="email" required><br><br>' + LineEnding +
+                        '  <label for="password">Password:</label><br>' + LineEnding +
+                        '  <input type="password" id="password" name="password" required><br><br>' + LineEnding +
+                        '  <label for="confirm_password">Confirm Password:</label><br>' + LineEnding +
+                        '  <input type="password" id="confirm_password" name="confirm_password" required><br><br>' + LineEnding +
+                        '  <input type="submit" value="Sign Up">' + LineEnding +
+                        '</form>' + LineEnding +
+                        '<p><a href="sign-in">Already have an account? Sign in</a></p>' + LineEnding +
+                        '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                        '</body></html>';
+  end;
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure forgotPasswordEndpoint(aRequest: TRequest; aResponse: TResponse);
+var
+  Email: string;
+  ResetMessage: string;
+begin
+  if aRequest.Method = 'POST' then
+  begin
+    // Handle form submission
+    Email := aRequest.ContentFields.Values['email'];
+    // Basic validation
+    if Email = '' then
+    begin
+      ResetMessage := '<p style="color: red;">Email address is required.</p>';
+    end
+    else if Pos('@', Email) = 0 then
+    begin
+      ResetMessage := '<p style="color: red;">Please enter a valid email address.</p>';
+    end
+    else
+    begin
+      // TODO: Add actual password reset functionality
+      ResetMessage := '<p style="color: green;">Password reset instructions have been sent to ' + Email + '.</p>' +
+                     '<p>Check your email for further instructions.</p>';
+    end;
+    aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                        '<html><head><title>Forgot Password - WeKan</title></head><body>' + LineEnding +
+                        '<h1>Forgot Password</h1>' + LineEnding +
+                        ResetMessage + LineEnding +
+                        '<p>Enter your email address to reset your password:</p>' + LineEnding +
+                        '<form action="forgot-password" method="POST">' + LineEnding +
+                        '  <label for="email">Email:</label><br>' + LineEnding +
+                        '  <input type="email" id="email" name="email" value="' + Email + '" required><br><br>' + LineEnding +
+                        '  <input type="submit" value="Reset Password">' + LineEnding +
+                        '</form>' + LineEnding +
+                        '<p><a href="sign-in">Back to Sign In</a></p>' + LineEnding +
+                        '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                        '</body></html>';
+  end
+  else
+  begin
+    // Show password reset form (GET request)
+    aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                        '<html><head><title>Forgot Password - WeKan</title></head><body>' + LineEnding +
+                        '<h1>Forgot Password</h1>' + LineEnding +
+                        '<p>Enter your email address to reset your password:</p>' + LineEnding +
+                        '<form action="forgot-password" method="POST">' + LineEnding +
+                        '  <label for="email">Email:</label><br>' + LineEnding +
+                        '  <input type="email" id="email" name="email" required><br><br>' + LineEnding +
+                        '  <input type="submit" value="Reset Password">' + LineEnding +
+                        '</form>' + LineEnding +
+                        '<p><a href="sign-in">Back to Sign In</a></p>' + LineEnding +
+                        '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                        '</body></html>';
+  end;
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
@@ -302,7 +698,6 @@ begin
     aResponse.SendContent;
     Exit;
   end;
-
   if aRequest.Method = 'POST' then
   begin
     ContentType := aRequest.ContentType;
@@ -313,7 +708,6 @@ begin
       aResponse.SendContent;
       Exit;  
     end;
-    
     try
       // Create uploads directory if it doesn't exist
       UploadDir := 'uploads';
@@ -327,10 +721,8 @@ begin
           Exit;
         end;
       end;
-
       // Parse multipart form data to get filename
       FileName := ExtractFileName(aRequest.Files[0].FileName);
-      
       // Create output file stream
       UploadStream := TFileStream.Create('uploads/' + FileName, fmCreate);
       try
@@ -341,7 +733,6 @@ begin
           if BytesRead = 0 then Break;
           UploadStream.WriteBuffer(Buffer, BytesRead);
         end;
-
         aResponse.Code := 200;
         aResponse.Content := 'File uploaded successfully';
       finally
@@ -354,731 +745,515 @@ begin
         aResponse.Content := 'Upload failed: ' + E.Message;
       end;
     end;
-
     aResponse.ContentType := 'text/plain';
     aResponse.ContentLength := Length(aResponse.Content);
     aResponse.SendContent;
   end;
 end;
 
-procedure registerEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  aResponse.Content:='Register';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
-procedure forgotPasswordEndpoint(aRequest: TRequest; aResponse: TResponse);
-begin
-  aResponse.Content:='Forgot Password';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
-  aResponse.SendContent;
-end;
-
 procedure userSettingsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content := '';
-  with aResponse.Contents do
-  begin
-    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
-    Add('<html><head><title>User Settings</title></head>');
-    Add('<body>');
-    Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable">');
-    Add('    <tr>');
-    Add('      <td colspan="8" valign="top" valign="center" align="left" bgcolor="#2573a7">');
-    Add('        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan ®">  ');
-    Add('        <img src="font/arrow/white/home.gif" width="20" height="20">');
-    Add('        <font size="3" color="#FFFFFF" face="arial">All Boards</font>  ');
-    Add('        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license">');
-    Add('          <font size="3" color="#FFFFFF" face="arial">WeKan ® Open Source Kanban board with MIT license</font>');
-    Add('        </a>  ');
-    Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a>  ');
-    Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">');
-    Add('          <img src="font/arrow/white/arrows.gif" width="20" height="20">');
-    Add('          <img src="font/arrow/white/ban.gif" width="20" height="20">');
-    Add('        </a>  ');
-    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a>  ');
-    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20">  ');
-    Add('        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>');
-    Add('      </td>');
-    Add('    </tr>');
-    Add('    <tr>');
-    Add('      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>User Settings</b></font></td>');
-    Add('    </tr>');
-    Add('  </table>');
-    Add('</body>');
-    Add('</html>');
-  end;
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/html';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>User Settings - WeKan</title></head><body>' + LineEnding +
+                      '<h1>User Settings</h1>' + LineEnding +
+                      '  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable">' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td colspan="8" valign="top" valign="center" align="left" bgcolor="#2573a7">' + LineEnding +
+                      '        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan ®">  ' + LineEnding +
+                      '        <img src="font/arrow/white/home.gif" width="20" height="20">' + LineEnding +
+                      '        <font size="3" color="#FFFFFF" face="arial">All Boards</font>  ' + LineEnding +
+                      '        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">' + LineEnding +
+                      '          <img src="font/arrow/white/arrows.gif" width="20" height="20">' + LineEnding +
+                      '          <img src="font/arrow/white/ban.gif" width="20" height="20">' + LineEnding +
+                      '        </a>  ' + LineEnding +
+                      '        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a>  ' + LineEnding +
+                      '        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20">  ' + LineEnding +
+                      '        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>' + LineEnding +
+                      '      </td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>User Settings</b></font></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '  </table>' + LineEnding +
+                      '</body>' + LineEnding +
+                      '</html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure notificationsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content := '';
-  with aResponse.Contents do
-  begin
-    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
-    Add('<html><head><title>Notifications</title></head>');
-    Add('<body>');
-    Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable">');
-    Add('    <tr>');
-    Add('      <td colspan="8" valign="top" valign="center" align="left" bgcolor="#2573a7">');
-    Add('        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan ®"><img src="font/arrow/white/home.gif" width="20" height="20">');
-    Add('        <font size="3" color="#FFFFFF" face="arial">All Boards</font>');
-    Add('        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license">');
-    Add('        <font size="3" color="#FFFFFF" face="arial">WeKan ® Open Source Kanban board with MIT license</font></a> ');
-    Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a> ');
-    Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">');
-    Add('        <img src="font/arrow/white/arrows.gif" width="20" height="20"> <img src="font/arrow/white/ban.gif" width="20" height="20"></a> ');
-    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a> ');
-    Add('        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20"> ');
-    Add('        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>');
-    Add('      </td>');
-    Add('    </tr>');
-    Add('    <tr>');
-    Add('      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>Notifications</b></font></td>');
-    Add('    </tr>');
-    Add('  </table>');
-    Add('</body>');
-    Add('</html>');
-  end;
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/html';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Notifications - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Notifications</h1>' + LineEnding +
+                      '  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable">' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td colspan="8" valign="top" valign="center" align="left" bgcolor="#2573a7">' + LineEnding +
+                      '        <img src="images/logo-header.png" alt="WeKan ®" title="WeKan ®"><img src="font/arrow/white/home.gif" width="20" height="20">' + LineEnding +
+                      '        <font size="3" color="#FFFFFF" face="arial">All Boards</font>' + LineEnding +
+                      '        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license">' + LineEnding +
+                      '        <font size="3" color="#FFFFFF" face="arial">WeKan ® Open Source Kanban board with MIT license</font></a> ' + LineEnding +
+                      '        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a> ' + LineEnding +
+                      '        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles">' + LineEnding +
+                      '        <img src="font/arrow/white/arrows.gif" width="20" height="20"> <img src="font/arrow/white/ban.gif" width="20" height="20"></a> ' + LineEnding +
+                      '        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a> ' + LineEnding +
+                      '        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20"> ' + LineEnding +
+                      '        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>');
+                      '      </td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>Notifications</b></font></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '  </table>');
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure allBoardsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content := '';
-  with aResponse.Contents do
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>All Boards - WeKan</title></head><body>' + LineEnding +
+                      '<table border="0" cellspacing="0" cellpadding="10" width="100%" bgcolor="#2573a7">' + LineEnding +
+                      '  <tr>' + LineEnding +
+                      '    <td align="left" valign="middle">' + LineEnding +
+                      '      <img src="images/logo-header.png" alt="WeKan" title="WeKan">&nbsp;' + LineEnding +
+                      '      <a href="#"><img src="font/arrow/white/home.gif" width="20"><font size="3" color="#FFFFFF" face="arial">All Boards</font></a>&nbsp;' + LineEnding +
+                      '    </td>' + LineEnding +
+                      '    <td align="right" valign="middle">' + LineEnding;
+  
+  if CurrentUser <> '' then
+  // This All Boards page has been tested to be visible at: Amiga IBrowse, FreeDOS Dillo, Linux Dillo/Netsurf/Chrome'
+  // TODO: At IBrowse, cards are at 1 list only. Change to be at different lists.
   begin
-    // This All Boards page has been tested to be visible at: Amiga IBrowse, FreeDOS Dillo, Linux Dillo/Netsurf/Chrome'
-    // TODO: At IBrowse, cards are at 1 list only. Change to be at different lists.
-    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
-    Add('<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">');
-    Add('<head>');
-    Add('<title>WeKan</title>');
-    Add('<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">');
-    Add('<meta name="viewport" content="maximum-scale=1.0,width=device-width">');
-    Add('<meta http-equiv="X-UA-Compatible" content="IE=edge">');
-    Add('<meta name="application-name" content="WeKan">');
-    Add('<meta name="msapplication-TileColor" content="#00aba9">');
-    Add('<meta name="theme-color" content="#fff">');
-    Add('<link rel="stylesheet" type="text/css" href="css/interact.css">');
-    Add('<script src="js/interact.js"></script>');
-    Add('</head>');
-    Add('<body>');
-    Add('  <table border="0" cellspacing="0" cellpadding="10" width="100%" id="bodytable"  bgcolor="#2573a7">');
-    Add('    <tr>');
-    Add('      <td colspan="8" align="left" valign="middle">');
-    Add('        <img src="images/logo-header.png" alt="WeKan" title="WeKan">&nbsp;');
-    Add('        <a href="#"><img src="font/arrow/white/home.gif" width="20"><font size="3" color="#FFFFFF" face="arial">All Boards</font></a>&nbsp;');
-    Add('        <a title="Show desktop drag handles" alt="Show desktop drag handles" href="#" aria-label="Show desktop drag handles"> ');
-    Add('          <img src="font/arrow/white/arrows.gif" width="20" height="20"><img src="font/arrow/white/ban.gif" width="20" height="20"> ');
-    Add('        </a>&nbsp;');
-    Add('        <a href="/b/D2SzJKZDS4Z48yeQH/wekan-r-open-source-kanban-board-with-mit-license"><font size="3" color="#FFFFFF" face="arial">WeKan Open Source Kanban board with MIT license</font></a>');
-    Add('        <a href="/b/JctQEtkayWXTTJyzt/wekan-multiverse"><font size="3" color="#FFFFFF" face="arial">WeKan Multiverse</font></a>');
-    Add('        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20" hspace="10"></a>');
-    Add('        <a href="usersettings" name="UserSettings"><font size="3" color="#FFFFFF" face="arial">[?] User Name</font></a>');
-    Add('        <a href="boardsettings" name="BoardSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20" hspace="10"></a>');
-    Add('      </td>');
-    Add('    </tr>');
-    Add('    <tr>');
-    Add('      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>My Boards</b></font></td>');
-    Add('    </tr>');
-    // Works with this code:
-    //  - IE6 at Win2k does work with this button HTML code.
-    //  - Amiga IBrowse:
-    //    - Does not support image inside of button.
-    //    - Dot show tooltip at all. Not for image, not for button.  Tooltip is with alt and aria-label.
-    //  - FreeDOS Dillo:
-    //    - Supports image inside of button, but better to get image visible at IBrowser, having image outside of button.
-    //    - Requires image width and height in pixels. Setting it to "auto" produces error.
-    //    - Requires buttons to be at table from left to right, because without table button width is full page width.
-    //    - Can not change button background color.
-    //    - Shows image tooltip. It does not show button tooltip. Tooltip is with alt and aria-label.
-    // Does not support HTML button at all:
-    //  - IE3 at Win95 does not support HTML button at all. Buttons are useful for submit form buttons and accessibility.
-    //  - Netscape at OS/2
-    Add('    <tr bgcolor="#2980b9">');
-    Add('      <td align="left= valign=top"><button class="js-add-board" title="Add Board" aria-label="Add Board" width="20" href="">Add Board</button></td>');
-    Add('      <td align="right" valign="top"><img src="font/star.gif" width="20" height="20" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list."></td>');
-    Add('      <td align="left" valign="top"><button class="js-star-board" title="Click to star board. It will show at top of your board list." aria-label="Click to star board. It will show at top of your board list." href="#">Star board</button></td>');
-    Add('      <td align="right" valign="top"><img src="font/arrow/white/duplicate.gif" width="20" height="20"  title="Duplicate board" aria-label="Duplicate board"></td>');
-    Add('      <td align="left" valign="top"><button class="js-clone-board" title="Duplicate board" aria-label="Duplicate board" href="#">Duplicate board</button></td>');
-    Add('      <td align="right" valign="top"><img src="font/arrow/white/archive.gif" width="20" height="20" title="Move to Archive" aria-label="Move to Archive"></td>');
-    Add('      <td align="left" valign="top"><button class="js-archive-board" title="Move to Archive" aria-label="Move to Archive" href="#">Archive board</button></td>');
-    Add('      <td><b><font color="#FFFFFF">Teams/Orgs</font></b></td>');
-    Add('    </tr>');
-    Add('  </table>');
-    // <h2>MultiDrag test, for future version of <a href="https://wekan.github.io">WeKan Open Source kanban</a></h2>
-    // <p>This MultiDrag test uses <a href="https://interactjs.io">https://interactjs.io</a> drag drop</p>
-    // <p>Features:</p>
-    // <ul>
-    // <li>Newest browsers, MultiDrag: Touchscreen, you can drag many cards at once with each finger.
-    //     Use case: Many users can drag their own card at big touch screen. Or one user can drag many cards.
-    //     There is not any kanban software with MultiDrag feature yet.
-    // </li>
-    // <li>Ladybird, OneDrag: Touchscreen, drag only one card at once. Is it possible to get MultiDrag?</li>
-    // <li>Legacy Browsers: Uses HTML4 tables, and GIF image for rounded corners, to be visible at Netsurf and Amiga IBrowse.
-    //     No drag drop features, so there will be buttons to move cards.
-    // </li>
-    // </ul> 
-    // Background GIF produces dithered background at Amiga IBrowse,
-    // so better to use table background color to get solid color:
-    // table background="img/round-blue.gif" => table bgcolor="#5e98c2"
-    // But this causes card to not have rounded corners at Netsurf and Amiga IBrowse.
-    // So, to have rounded corners at Netsurf and Amiga IBrowse, use background GIF.
-    //
-    // valid_colors = ['white', 'green', 'yellow', 'orange', 'red', 'purple', 'blue', 'sky', 'lime', 'pink', 'black',
-    //                 'silver', 'peachpuff', 'crimson', 'plum', 'darkgreen', 'slateblue', 'magenta', 'gold', 'navy',
-    //                 'gray', 'saddlebrown', 'paleturquoise', 'mistyrose', 'indigo']
-    //
-    Add(BoardIcon('At touchscreen', 1, 'white', 'blue'));
-    Add(BoardIcon('Drag many at once', 2, 'white', 'green'));
-    Add(BoardIcon('Visible at Netsurf', 3, 'white', 'red'));
-    Add(BoardIcon('Amiga IBrowse', 4, 'black', 'yellow'));
-    Add(BoardIcon('For all browsers', 5, 'white', 'gray'));
-    Add(BoardIcon('And all screen sizes', 6, 'white', 'black'));
-    Add(BoardIcon('And all OS', 7, 'black', 'cyan'));
-    Add(BoardIcon('And CPUs', 8, 'black', 'pink'));
-    Add(BoardIcon('At Earth', 9, 'black', 'orange'));
-    Add(BoardIcon('And Space', 10, 'black', 'lightblue'));
-    Add('<br>');
-    Add(DrawLine(0,0,270,150,500,210,'red','2'));
-    Add('<script src="js/interact-bottom.js"></script>');
-    Add('</body>');
-    Add('</html>');
+    aResponse.Content := aResponse.Content + '<font size="3" color="#FFFFFF" face="arial">Welcome, ' + CurrentUser + '</font>&nbsp;' + LineEnding +
+                        '<a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" height="20"></a>&nbsp;' + LineEnding +
+                        '<a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a>&nbsp;' + LineEnding +
+                        '<a href="logout"><font size="3" color="#FFFFFF" face="arial">Logout</font></a>';
+  end
+  else
+  begin
+    aResponse.Content := aResponse.Content + '<a href="sign-in"><font size="3" color="#FFFFFF" face="arial">Sign In</font></a>&nbsp;' + LineEnding +
+                        '<a href="sign-up"><font size="3" color="#FFFFFF" face="arial">Sign Up</font></a>';
   end;
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/html';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := aResponse.Content + '    </td>' + LineEnding +
+                      '  </tr>' + LineEnding +
+                      '  <tr>' + LineEnding +
+                      '    <td colspan="2" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>My Boards</b></font></td>' + LineEnding +
+                      '  </tr>' + LineEnding +
+                      '</table>' + LineEnding +
+                      '<br>' + LineEnding +
+                      '<table border="0" padding="0" spacing="0" width="100%">' + LineEnding +
+                      '  <tbody>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td width="20" height="20"></td>' + LineEnding +
+                      '      <td width="400" height="80" valign="middle" align="center">' + LineEnding +
+                      '        <font size="3" color="#666666" face="arial">No boards yet. Create your first board to get started!</font>' + LineEnding +
+                      '      </td>' + LineEnding +
+                      '      <td width="20" height="20"></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '  </tbody>' + LineEnding +
+                      '</table>' + LineEnding +
+                      '<br>' + LineEnding +
+                      '<p align="center"><a href="board"><font size="3" color="#007bff" face="arial">Create New Board</font></a></p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure publicEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Public';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Public Boards - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Public Boards</h1>' + LineEnding +
+                      '<p>Public boards will be displayed here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure boardEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content := '';
-  with aResponse.Contents do
-  begin
-    Add('<style>');
-    Add('  .swimlane { margin-bottom: 20px; }');
-    Add('  .kanban-lists-container {');
-    Add('    display: flex;');
-    Add('    flex-direction: row;');
-    Add('    gap: 20px;');
-    Add('    overflow-x: auto;');
-    Add('  }');
-    Add('  .kanban-list {');
-    Add('    min-width: 250px;');
-    Add('    background: #f4f4f4;');
-    Add('    padding: 10px;');
-    Add('    border-radius: 4px;');
-    Add('  }');
-    Add('  .selected {');
-    Add('    outline: 2px solid #0066ff;');
-    Add('    box-shadow: 0 0 5px rgba(0,102,255,0.5);');
-    Add('  }');
-    Add('  .moving {');
-    Add('    opacity: 0.7;');
-    Add('    background: #e0e0e0;');
-    Add('  }');
-    Add('  .kanban-card {');
-    Add('    background: white;');
-    Add('    padding: 8px;');
-    Add('    margin: 8px 0;');
-    Add('    border-radius: 3px;');
-    Add('    box-shadow: 0 1px 3px rgba(0,0,0,0.12);');
-    Add('    cursor: pointer;');
-    Add('  }');
-    Add('  .card-placeholder {');
-    Add('    border: 2px dashed #ccc;');
-    Add('    background: #f9f9f9;');
-    Add('    height: 30px;');
-    Add('    margin: 8px 0;');
-    Add('  }');
-    Add('  .swimlane-placeholder {');
-    Add('    border: 2px dashed #ccc;');
-    Add('    background: #f9f9f9;');
-    Add('    height: 50px;');
-    Add('    margin-bottom: 20px;');
-    Add('  }');
-    Add('  .kanban-list-title {');
-    Add('    cursor: move;');
-    Add('  }');
-    Add('</style>');
-    Add('<section id="kanban-board" aria-label="Kanban Board" role="region" tabindex="0">');
-    Add('  <h1>Accessible Kanban Board</h1>');
-    Add('  <div class="swimlane" role="region" aria-label="Swimlane 1" tabindex="0" draggable="true">');
-    Add('    <h2>Swimlane 1</h2>');
-    Add('    <div class="kanban-lists-container">');
-    Add('      <div class="kanban-list" role="list" aria-label="List 1" tabindex="0">');
-    Add('        <h3 class="kanban-list-title" draggable="true">List 1</h3>');
-    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card 1</div>');
-    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card 2</div>');
-    Add('      </div>');
-    Add('      <div class="kanban-list" role="list" aria-label="List 2" tabindex="0">');
-    Add('        <h3 class="kanban-list-title" draggable="true">List 2</h3>');
-    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card A</div>');
-    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card B</div>');
-    Add('      </div>');
-    Add('    </div>');
-    Add('  </div>');
-    Add('  <div class="swimlane" role="region" aria-label="Swimlane 2" tabindex="0" draggable="true">');
-    Add('    <h2>Swimlane 2</h2>');
-    Add('    <div class="kanban-lists-container">');
-    Add('      <div class="kanban-list" role="list" aria-label="List 3" tabindex="0">');
-    Add('        <h3 class="kanban-list-title" draggable="true">List 3</h3>');
-    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card 3</div>');
-    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card 4</div>');
-    Add('      </div>');
-    Add('      <div class="kanban-list" role="list" aria-label="List 4" tabindex="0">');
-    Add('        <h3 class="kanban-list-title" draggable="true">List 4</h3>');
-    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card C</div>');
-    Add('        <div class="kanban-card" role="listitem" tabindex="0">Card D</div>');
-    Add('      </div>');
-    Add('    </div>');
-    Add('  </div>');
-    Add('  <script>');
-    Add('    let selectedElement = null;');
-    Add('    let isMoving = false;');
-    Add('    let sourceList = null;');
-    Add('    let placeholder = null;');
-    Add('    let swimlanePlaceholder = null;');
-    Add('');
-    Add('    function handleSelection(e) {');
-    Add('      const card = e.target.closest(".kanban-card");');
-    Add('      if (!card) return;');
-    Add('');
-    Add('      if (e.key === " ") {');
-    Add('        e.preventDefault();');
-    Add('        if (!isMoving) {');
-    Add('          if (selectedElement) {');
-    Add('            selectedElement.classList.remove("selected");');
-    Add('          }');
-    Add('          selectedElement = card;');
-    Add('          sourceList = card.closest(".kanban-list");');
-    Add('          selectedElement.classList.add("selected", "moving");');
-    Add('          selectedElement.setAttribute("aria-grabbed", "true");');
-    Add('          isMoving = true;');
-    Add('          placeholder = document.createElement("div");');
-    Add('          placeholder.className = "card-placeholder";');
-    Add('          card.parentNode.insertBefore(placeholder, card.nextSibling);');
-    Add('        } else {');
-    Add('          completeMove();');
-    Add('        }');
-    Add('      }');
-    Add('    }');
-    Add('');
-    Add('    function completeMove() {');
-    Add('      if (!selectedElement) return;');
-    Add('');
-    Add('      selectedElement.classList.remove("moving", "selected");');
-    Add('      selectedElement.setAttribute("aria-grabbed", "false");');
-    Add('      const targetList = document.activeElement.closest(".kanban-list");');
-    Add('      if (targetList) {');
-    Add('        targetList.insertBefore(selectedElement, placeholder);');
-    Add('        announceMove(sourceList, targetList);');
-    Add('      }');
-    Add('      placeholder.remove();');
-    Add('      isMoving = false;');
-    Add('      sourceList = null;');
-    Add('      placeholder = null;');
-    Add('    }');
-    Add('');
-    Add('    function announceMove(from, to) {');
-    Add('      const announcement = document.createElement("div");');
-    Add('      announcement.setAttribute("role", "alert");');
-    Add('      announcement.setAttribute("aria-live", "polite");');
-    Add('      announcement.textContent = `Card moved from ${from.querySelector("h3").textContent} to ${to.querySelector("h3").textContent}`;');
-    Add('      document.body.appendChild(announcement);');
-    Add('      setTimeout(() => announcement.remove(), 1000);');
-    Add('    }');
-    Add('');
-    Add('    document.addEventListener("keydown", function(e) {');
-    Add('      if (e.key === " ") {');
-    Add('        handleSelection(e);');
-    Add('      }');
-    Add('      ');
-    Add('      if (isMoving) {');
-    Add('        const lists = Array.from(document.querySelectorAll(".kanban-list"));');
-    Add('        const currentList = document.activeElement.closest(".kanban-list");');
-    Add('        const currentIndex = lists.indexOf(currentList);');
-    Add('');
-    Add('        switch(e.key) {');
-    Add('          case "ArrowLeft":');
-    Add('            e.preventDefault();');
-    Add('            if (currentIndex > 0) {');
-    Add('              lists[currentIndex - 1].focus();');
-    Add('            }');
-    Add('            break;');
-    Add('          case "ArrowRight":');
-    Add('            e.preventDefault();');
-    Add('            if (currentIndex < lists.length - 1) {');
-    Add('              lists[currentIndex + 1].focus();');
-    Add('            }');
-    Add('            break;');
-    Add('          case "ArrowUp":');
-    Add('            e.preventDefault();');
-    Add('            if (selectedElement.previousElementSibling && selectedElement.previousElementSibling !== placeholder) {');
-    Add('              selectedElement.parentNode.insertBefore(placeholder, selectedElement.previousElementSibling);');
-    Add('            }');
-    Add('            break;');
-    Add('          case "ArrowDown":');
-    Add('            e.preventDefault();');
-    Add('            if (selectedElement.nextElementSibling) {');
-    Add('              selectedElement.parentNode.insertBefore(placeholder, selectedElement.nextElementSibling.nextSibling);');
-    Add('            }');
-    Add('            break;');
-    Add('          case "Escape":');
-    Add('            e.preventDefault();');
-    Add('            selectedElement.classList.remove("moving", "selected");');
-    Add('            selectedElement.setAttribute("aria-grabbed", "false");');
-    Add('            placeholder.remove();');
-    Add('            isMoving = false;');
-    Add('            break;');
-    Add('        }');
-    Add('      }');
-    Add('    });');
-    Add('');
-    Add('    document.querySelectorAll(".kanban-card").forEach(card => {');
-    Add('      card.setAttribute("draggable", "true");');
-    Add('      card.addEventListener("dragstart", function(e) {');
-    Add('        selectedElement = e.target;');
-    Add('        sourceList = selectedElement.closest(".kanban-list");');
-    Add('        e.dataTransfer.effectAllowed = "move";');
-    Add('        setTimeout(() => selectedElement.classList.add("moving"), 0);');
-    Add('      });');
-    Add('      card.addEventListener("dragend", function() {');
-    Add('        selectedElement.classList.remove("moving");');
-    Add('        selectedElement = null;');
-    Add('        sourceList = null;');
-    Add('      });');
-    Add('    });');
-    Add('');
-    Add('    document.querySelectorAll(".kanban-list").forEach(list => {');
-    Add('      list.addEventListener("dragover", function(e) {');
-    Add('        e.preventDefault();');
-    Add('        e.dataTransfer.dropEffect = "move";');
-    Add('        const afterElement = getDragAfterElement(list, e.clientY);');
-    Add('        if (afterElement == null) {');
-    Add('          list.appendChild(placeholder);');
-    Add('        } else {');
-    Add('          list.insertBefore(placeholder, afterElement);');
-    Add('        }');
-    Add('      });');
-    Add('      list.addEventListener("drop", function(e) {');
-    Add('        e.preventDefault();');
-    Add('        if (selectedElement) {');
-    Add('          list.insertBefore(selectedElement, placeholder);');
-    Add('          announceMove(sourceList, list);');
-    Add('        }');
-    Add('        placeholder.remove();');
-    Add('      });');
-    Add('    });');
-    Add('');
-    Add('    document.querySelectorAll(".swimlane").forEach(swimlane => {');
-    Add('      swimlane.addEventListener("dragstart", function(e) {');
-    Add('        selectedElement = e.target;');
-    Add('        e.dataTransfer.effectAllowed = "move";');
-    Add('        setTimeout(() => selectedElement.classList.add("moving"), 0);');
-    Add('      });');
-    Add('      swimlane.addEventListener("dragend", function() {');
-    Add('        selectedElement.classList.remove("moving");');
-    Add('        selectedElement = null;');
-    Add('      });');
-    Add('      swimlane.addEventListener("dragover", function(e) {');
-    Add('        e.preventDefault();');
-    Add('        e.dataTransfer.dropEffect = "move";');
-    Add('        const afterElement = getDragAfterElement(swimlane.parentNode, e.clientY);');
-    Add('        if (afterElement == null) {');
-    Add('          swimlane.parentNode.appendChild(swimlanePlaceholder);');
-    Add('        } else {');
-    Add('          swimlane.parentNode.insertBefore(swimlanePlaceholder, afterElement);');
-    Add('        }');
-    Add('      });');
-    Add('      swimlane.addEventListener("drop", function(e) {');
-    Add('        e.preventDefault();');
-    Add('        if (selectedElement) {');
-    Add('          swimlane.parentNode.insertBefore(selectedElement, swimlanePlaceholder);');
-    Add('        }');
-    Add('        swimlanePlaceholder.remove();');
-    Add('      });');
-    Add('    });');
-    Add('');
-    Add('    document.querySelectorAll(".kanban-list-title").forEach(title => {');
-    Add('      title.addEventListener("dragstart", function(e) {');
-    Add('        selectedElement = e.target.closest(".kanban-list");');
-    Add('        e.dataTransfer.effectAllowed = "move";');
-    Add('        setTimeout(() => selectedElement.classList.add("moving"), 0);');
-    Add('      });');
-    Add('      title.addEventListener("dragend", function() {');
-    Add('        selectedElement.classList.remove("moving");');
-    Add('        selectedElement = null;');
-    Add('      });');
-    Add('    });');
-    Add('');
-    Add('    function getDragAfterElement(container, y) {');
-    Add('      const draggableElements = [...container.querySelectorAll(".swimlane:not(.moving)")];');
-    Add('');
-    Add('      return draggableElements.reduce((closest, child) => {');
-    Add('        const box = child.getBoundingClientRect();');
-    Add('        const offset = y - box.top - box.height / 2;');
-    Add('        if (offset < 0 && offset > closest.offset) {');
-    Add('          return { offset: offset, element: child };');
-    Add('        } else {');
-    Add('          return closest;');
-    Add('        }');
-    Add('      }, { offset: Number.NEGATIVE_INFINITY }).element;');
-    Add('    }');
-    Add('  </script>');
-    Add('</section>');
-  end;
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/html';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Board - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Kanban Board</h1>' + LineEnding +
+                      '<table border="0" padding="0" spacing="0" width="100%">' + LineEnding +
+                      '  <tbody>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td width="20" height="20"></td>' + LineEnding +
+                      '      <td width="200" height="80" valign="middle" align="left">' + LineEnding +
+                      '        <font size="4" color="white" face="arial"><b>To Do</b></font>' + LineEnding +
+                      '      </td>' + LineEnding +
+                      '      <td width="200" height="80" valign="middle" align="left">' + LineEnding +
+                      '        <font size="4" color="white" face="arial"><b>In Progress</b></font>' + LineEnding +
+                      '      </td>' + LineEnding +
+                      '      <td width="200" height="80" valign="middle" align="left">' + LineEnding +
+                      '        <font size="4" color="white" face="arial"><b>Done</b></font>' + LineEnding +
+                      '      </td>' + LineEnding +
+                      '      <td width="20" height="20"></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '  </tbody>' + LineEnding +
+                      '</table>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure cardEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Card';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Card - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Card Details</h1>' + LineEnding +
+                      '<table border="0" padding="0" spacing="0" width="100%">' + LineEnding +
+                      '  <tbody>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td width="20" height="20"></td>' + LineEnding +
+                      '      <td width="400" height="80" valign="middle" align="left">' + LineEnding +
+                      '        <font size="4" color="black" face="arial"><b>Sample Task</b></font>' + LineEnding +
+                      '        <br><font size="2" color="gray" face="arial">Description: This is a sample task description</font>' + LineEnding +
+                      '      </td>' + LineEnding +
+                      '      <td width="20" height="20"></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '  </tbody>' + LineEnding +
+                      '</table>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure shortcutsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Shortcuts';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Shortcuts - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Shortcuts</h1>' + LineEnding +
+                      '<p>Keyboard shortcuts and quick access will be implemented here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure calendarEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content := '';
-  with aResponse.Contents do
-  begin
-    // This calendar has been tested to be visible at: Amiga IBrowse, FreeDOS Dillo, Linux Dillo/Netsurf/Chrome
-    //
-    // For accessibility, use only one table. Not nested table. Avoid merged or split cells.
-    // Consider Alternative Views: For calendars, offer a "list view" or other simplified
-    // representations that are inherently more linear and accessible for assistive technology users.
-    //
-    Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">');
-    Add('<html lang="en">');
-    Add('<head>');
-    Add('  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">');
-    Add('  <title>July 2025 Calendar</title>');
-    Add('  <style type="text/css">');
-    Add('    table      { width: 100%; border-collapse: collapse; margin-bottom: 20px; }');
-    Add('    th, td     { border: 1px solid #ccc; padding: 8px; text-align: center; }');
-    Add('    th         { background-color: #f2f2f2; }');
-    Add('    .empty-day { background-color: #eee; color: #999; }');
-    // background-color: #d1e7dd; Light green to highlight today
-    Add('    .today     { background-color: #d1e7dd; font-weight: bold; border: 2px solid #007bff; }');
-    Add('    caption    { font-size: 1.5em; margin-bottom: 10px; font-weight: bold; text-align: left; }');
-    Add('  </style>');
-    Add('</head>');
-    Add('<body bgcolor="#FFFFFF">');
-    Add('<p><a href="../">All Pages</a></p>');
-    Add('<h1><font face="arial">July 2025</font></h1>');
-    Add('<table summary="This table displays the calendar. Days of the week are column headers, and dates are listed under them." width="100%" border-collapse="collapse" margin-bottom="20" border="1" cellpadding="5" cellspacing="0" id="calendartable">');
-    Add('  <caption><font size="4" face="arial">July 2025</font></caption>');
-    Add('  <thead>');
-    Add('    <tr>');
-    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Monday</font></th>');
-    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Tuesday</font></th>');
-    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Wednesday</font></th>');
-    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Thursday</font></th>');
-    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Friday</font></th>');
-    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Saturday</font></th>');
-    Add('      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Sunday</font></th>');
-    Add('    </tr>');
-    Add('  </thead>');
-    Add('  <tbody>');
-    Add('    <tr>');
-    Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">1</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">2</font></td>');
-    Add('      <td class="today" border="3" padding="8" align="center" bgcolor="#d1e7dd" border="2"><b><font size="4" face="arial">3</font></b></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">4</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">5</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">6</font></td>');
-    Add('    </tr>');
-    Add('    <tr>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">7</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">8</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">9</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">10</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">11</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">12</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">13</font></td>');
-    Add('    </tr>');
-    Add('    <tr>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">14</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">15</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">16</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">17</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">18</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">19</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">20</font></td>');
-    Add('    </tr>');
-    Add('    <tr>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">21</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">22</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">23</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">24</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">25</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">26</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">27</font></td>');
-    Add('    </tr>');
-    Add('    <tr>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">28</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">29</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">30</font></td>');
-    Add('      <td border="1" padding="8" align="center"><font size="4" face="arial">31</font></td>');
-    Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>');
-    Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>');
-    Add('      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>');
-    Add('    </tr>');
-    Add('  </tbody>');
-    Add('</table>');
-    Add('</body>');
-    Add('</html>');
-  end;
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/html';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  // This calendar has been tested to be visible at: Amiga IBrowse, FreeDOS Dillo, Linux Dillo/Netsurf/Chrome
+  //
+  // For accessibility, use only one table. Not nested table. Avoid merged or split cells.
+  // Consider Alternative Views: For calendars, offer a "list view" or other simplified
+  // representations that are inherently more linear and accessible for assistive technology users.
+  //
+
+  // background-color: #d1e7dd; Light green to highlight today
+
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">' + LineEnding +
+                      '<html lang="en">' + LineEnding +
+                      '<head>' + LineEnding +
+                      '  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">' + LineEnding +
+                      '  <title>July 2025 Calendar</title>' + LineEnding +
+                      '  <style type="text/css">' + LineEnding +
+                      '    table      { width: 100%; border-collapse: collapse; margin-bottom: 20px; }' + LineEnding +
+                      '    th, td     { border: 1px solid #ccc; padding: 8px; text-align: center; }' + LineEnding +
+                      '    th         { background-color: #f2f2f2; }' + LineEnding +
+                      '    .empty-day { background-color: #eee; color: #999; }' + LineEnding +
+                      '    .today     { background-color: #d1e7dd; font-weight: bold; border: 2px solid #007bff; }' + LineEnding +
+                      '    caption    { font-size: 1.5em; margin-bottom: 10px; font-weight: bold; text-align: left; }' + LineEnding +
+                      '  </style>' + LineEnding +
+                      '</head>' + LineEnding +
+                      '<body bgcolor="#FFFFFF">' + LineEnding +
+                      '<p><a href="../">All Pages</a></p>' + LineEnding +
+                      '<h1><font face="arial">July 2025</font></h1>' + LineEnding +
+                      '<table summary="This table displays the calendar. Days of the week are column headers, and dates are listed under them." width="100%" border-collapse="collapse" margin-bottom="20" border="1" cellpadding="5" cellspacing="0" id="calendartable">' + LineEnding +
+                      '  <caption><font size="4" face="arial">July 2025</font></caption>' + LineEnding +
+                      '  <thead>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Monday</font></th>' + LineEnding +
+                      '      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Tuesday</font></th>' + LineEnding +
+                      '      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Wednesday</font></th>' + LineEnding +
+                      '      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Thursday</font></th>' + LineEnding +
+                      '      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Friday</font></th>' + LineEnding +
+                      '      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Saturday</font></th>' + LineEnding +
+                      '      <th scope="col" border="1" padding="8" align="center" bgcolor="#f2f2f2"><font size="4" face="arial">Sunday</font></th>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '  </thead>' + LineEnding +
+                      '  <tbody>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">1</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">2</font></td>' + LineEnding +
+                      '      <td class="today" border="3" padding="8" align="center" bgcolor="#d1e7dd" border="2"><b><font size="4" face="arial">3</font></b></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">4</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">5</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">6</font></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">7</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">8</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">9</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">10</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">11</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">12</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">13</font></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">14</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">15</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">16</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">17</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">18</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">19</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">20</font></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">21</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">22</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">23</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">24</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">25</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">26</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">27</font></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '    <tr>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">28</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">29</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">30</font></td>' + LineEnding +
+                      '      <td border="1" padding="8" align="center"><font size="4" face="arial">31</font></td>' + LineEnding +
+                      '      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>' + LineEnding +
+                      '      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>' + LineEnding +
+                      '      <td class="empty-day" border="1" padding="8" align="center" color="#999999" bgcolor="#eeeeee"><font size="4" face="arial"></font></td>' + LineEnding +
+                      '    </tr>' + LineEnding +
+                      '  </tbody>' + LineEnding +
+                      '</table>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure templatesEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Templates';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Templates - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Board Templates</h1>' + LineEnding +
+                      '<p>Pre-defined board templates will be displayed here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure myCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='My Cards';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>My Cards - WeKan</title></head><body>' + LineEnding +
+                      '<h1>My Cards</h1>' + LineEnding +
+                      '<p>Cards assigned to you will be displayed here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure dueCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Due Cards';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Due Cards - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Due Cards</h1>' + LineEnding +
+                      '<p>Cards with upcoming due dates will be displayed here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure globalSearchEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Global Search';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Global Search - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Global Search</h1>' + LineEnding +
+                      '<form action="search" method="GET">' + LineEnding +
+                      '  <input type="text" name="q" size="50" placeholder="Search for cards, boards, users...">' + LineEnding +
+                      '  <input type="submit" value="Search">' + LineEnding +
+                      '</form>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure brokenCardsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Broken Cards';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Broken Cards - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Broken Cards</h1>' + LineEnding +
+                      '<p>Cards with issues will be displayed here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure accessibilityEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Accessibility - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Accessibility Features</h1>' + LineEnding +
+                      '<p>WeKan is designed to be accessible to all users, including those using screen readers and assistive technologies.</p>' + LineEnding +
+                      '<h2>Keyboard Navigation</h2>' + LineEnding +
+                      '<ul>' + LineEnding +
+                      '  <li>Use Tab key to navigate between elements</li>' + LineEnding +
+                      '  <li>Use Enter or Space to activate buttons and links</li>' + LineEnding +
+                      '  <li>Use Arrow keys to navigate within lists and cards</li>' + LineEnding +
+                      '</ul>' + LineEnding +
+                      '<h2>Screen Reader Support</h2>' + LineEnding +
+                      '<ul>' + LineEnding +
+                      '  <li>All images have descriptive alt text</li>' + LineEnding +
+                      '  <li>Proper heading structure for navigation</li>' + LineEnding +
+                      '  <li>Semantic HTML elements for better understanding</li>' + LineEnding +
+                      '</ul>' + LineEnding +
+                      '<h2>High Contrast</h2>' + LineEnding +
+                      '<p>WeKan supports high contrast modes and can be used with browser accessibility features.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure importEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Import';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Import - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Import Data</h1>' + LineEnding +
+                      '<p>Import data from other sources will be implemented here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure adminSettingEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Admin Settings';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Admin Settings - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Admin Settings</h1>' + LineEnding +
+                      '<p>Administrative settings will be implemented here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure informationEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Information';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Information - WeKan</title></head><body>' + LineEnding +
+                      '<h1>System Information</h1>' + LineEnding +
+                      '<p>System information and status will be displayed here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure peopleEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='People';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>People - WeKan</title></head><body>' + LineEnding +
+                      '<h1>People Management</h1>' + LineEnding +
+                      '<p>User management interface will be implemented here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure adminReportsEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Admin Reports';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Admin Reports - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Admin Reports</h1>' + LineEnding +
+                      '<p>Administrative reports will be implemented here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure translationEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='Translation';
-  aResponse.Code:=200;
-  aResponse.ContentType:='text/plain';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Translation - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Translation</h1>' + LineEnding +
+                      '<p>Translation management interface will be implemented here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
 procedure jsonEndpoint(aRequest: TRequest; aResponse: TResponse);
 begin
-  aResponse.Content:='{"everything":"great"}';
-  aResponse.Code:=200;
-  aResponse.ContentType:='application/json';
-  aResponse.ContentLength:=Length(aResponse.Content);
+  aResponse.Content := '{"status": "ok", "message": "JSON API endpoint"}';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'application/json';
+  aResponse.ContentLength := Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
+procedure attachmentsEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Attachments - WeKan</title></head><body>' + LineEnding +
+                      '<h1>Attachments Management</h1>' + LineEnding +
+                      '<p>File attachments management interface will be implemented here.</p>' + LineEnding +
+                      '<p><a href=".">Back to Home</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
   aResponse.SendContent;
 end;
 
@@ -1103,13 +1278,10 @@ begin
     aResponse.SendContent;
     Exit;
   end;
-
   // Get absolute path to public directory for security checks
   FullPublicPath := ExpandFileName('public');
-  
   // Construct path to requested file in public directory
   FilePath := 'public' + RequestPath;
-  
   // If the path ends with a directory separator, append 'index.html'
   if (Length(FilePath) > 0) and (FilePath[Length(FilePath)] = DirectorySeparator) then
     FilePath := FilePath + 'index.html'
@@ -1120,7 +1292,6 @@ begin
     if FileExists(IndexPath) then
       FilePath := IndexPath;
   end;
-  
   // Security: Ensure the file is within the public directory
   NormalizedFilePath := ExpandFileName(FilePath);
   if (Copy(NormalizedFilePath, 1, Length(FullPublicPath)) <> FullPublicPath) then
@@ -1131,7 +1302,6 @@ begin
     aResponse.SendContent;
     Exit;
   end;
-  
   // Check if file exists
   if not FileExists(NormalizedFilePath) then
   begin
@@ -1142,12 +1312,10 @@ begin
     aResponse.SendContent;
     Exit;
   end;
-  
   try
     // Determine content type based on file extension
     FileExt := LowerCase(ExtractFileExt(NormalizedFilePath));
     MimeType := 'application/octet-stream'; // Default MIME type
-    
     if FileExt = '.html' then
       MimeType := 'text/html'
     else if FileExt = '.css' then
@@ -1168,7 +1336,6 @@ begin
       MimeType := 'image/x-icon'
     else if FileExt = '.txt' then
       MimeType := 'text/plain';
-      
     // Open file and send its contents
     FileStream := TFileStream.Create(FilePath, fmOpenRead or fmShareDenyWrite);
     try
@@ -1197,6 +1364,25 @@ begin
   end;
 end;
 
+procedure logoutEndpoint(aRequest: TRequest; aResponse: TResponse);
+begin
+  // Clear current user session
+  CurrentUser := '';
+  aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                      '<html><head><title>Logged Out - WeKan</title>' + LineEnding +
+                      '<meta http-equiv="refresh" content="2;url=.">' + LineEnding +
+                      '</head><body>' + LineEnding +
+                      '<h1>Logged Out</h1>' + LineEnding +
+                      '<p>You have been successfully logged out.</p>' + LineEnding +
+                      '<p>You will be redirected to the home page in 2 seconds...</p>' + LineEnding +
+                      '<p><a href=".">Click here if you are not redirected automatically</a></p>' + LineEnding +
+                      '</body></html>';
+  aResponse.Code := 200;
+  aResponse.ContentType := 'text/html';
+  aResponse.ContentLength := Length(aResponse.Content);
+  aResponse.SendContent;
+end;
+
 // We maintain a list of redirections to ensure that we don't break old URLs
 // when we change our routing scheme.
 //-- const redirections = {
@@ -1211,34 +1397,78 @@ end;
 
 begin
   Application.Port:=5500;
+  // Initialize random number generator
+  Randomize;
+  // Initialize SQLite database
+  if not InitializeUserStorage then
+  begin
+    Writeln('Failed to initialize user storage. Exiting.');
+    Exit;
+  end;
+  
+  // Main routes matching router.js structure
   HTTPRouter.RegisterRoute('/', rmGet, @allPagesEndpoint);
+  
+  // Authentication routes
   HTTPRouter.RegisterRoute('/sign-in', rmGet, @loginEndpoint);
+  HTTPRouter.RegisterRoute('/sign-in', rmPost, @loginEndpoint);
   HTTPRouter.RegisterRoute('/sign-up', rmGet, @registerEndpoint);
+  HTTPRouter.RegisterRoute('/sign-up', rmPost, @registerEndpoint);
   HTTPRouter.RegisterRoute('/forgot-password', rmGet, @forgotPasswordEndpoint);
+  HTTPRouter.RegisterRoute('/forgot-password', rmPost, @forgotPasswordEndpoint);
+  HTTPRouter.RegisterRoute('/logout', rmGet, @logoutEndpoint); // Add logout endpoint
+  
+  // Board routes
   HTTPRouter.RegisterRoute('/allboards', rmGet, @allBoardsEndpoint);
-  HTTPRouter.RegisterRoute('/usersettings', rmGet, @userSettingsEndpoint);
-  HTTPRouter.RegisterRoute('/notifications', rmGet, @notificationsEndpoint);
   HTTPRouter.RegisterRoute('/public', rmGet, @publicEndpoint);
   HTTPRouter.RegisterRoute('/board', rmGet, @boardEndpoint);
-// fm.setRoute(fm.GET "/b/:boardId/:slug/:cardId", card)
+  HTTPRouter.RegisterRoute('/b/:id/:slug', rmGet, @boardEndpoint); // Board with ID and slug
+  HTTPRouter.RegisterRoute('/b/:boardId/:slug/:cardId', rmGet, @cardEndpoint); // Card within board
+  
+  // Card routes
   HTTPRouter.RegisterRoute('/card', rmGet, @cardEndpoint);
-  HTTPRouter.RegisterRoute('/shortcuts', rmGet, @shortCutsEndpoint);
-  HTTPRouter.RegisterRoute('/templates', rmGet, @templatesEndpoint);
   HTTPRouter.RegisterRoute('/my-cards', rmGet, @myCardsEndpoint);
   HTTPRouter.RegisterRoute('/due-cards', rmGet, @dueCardsEndpoint);
+  
+  // Utility routes
+  HTTPRouter.RegisterRoute('/shortcuts', rmGet, @shortcutsEndpoint);
+  HTTPRouter.RegisterRoute('/templates', rmGet, @templatesEndpoint);
+  HTTPRouter.RegisterRoute('/b/templates', rmGet, @templatesEndpoint); // Template container
+  HTTPRouter.RegisterRoute('/accessibility', rmGet, @accessibilityEndpoint);
+  
+  // Search and import
   HTTPRouter.RegisterRoute('/global-search', rmGet, @globalSearchEndpoint);
-  HTTPRouter.RegisterRoute('/broken-cards', rmGet, @brokenCardsEndpoint);
   HTTPRouter.RegisterRoute('/import', rmGet, @importEndpoint);
+  HTTPRouter.RegisterRoute('/import/:source', rmGet, @importEndpoint); // Import with source
+  
+  // Admin and settings routes
   HTTPRouter.RegisterRoute('/setting', rmGet, @adminSettingEndpoint);
   HTTPRouter.RegisterRoute('/information', rmGet, @informationEndpoint);
   HTTPRouter.RegisterRoute('/people', rmGet, @peopleEndpoint);
   HTTPRouter.RegisterRoute('/admin-reports', rmGet, @adminReportsEndpoint);
+  HTTPRouter.RegisterRoute('/attachments', rmGet, @attachmentsEndpoint);
+  HTTPRouter.RegisterRoute('/translation', rmGet, @translationEndpoint);
+  HTTPRouter.RegisterRoute('/broken-cards', rmGet, @brokenCardsEndpoint);
+  
+  // User routes
+  HTTPRouter.RegisterRoute('/usersettings', rmGet, @userSettingsEndpoint);
+  HTTPRouter.RegisterRoute('/notifications', rmGet, @notificationsEndpoint);
+  
+  // Calendar and other features
   HTTPRouter.RegisterRoute('/calendar', rmGet, @calendarEndpoint);
+  
+  // Upload functionality
   HTTPRouter.RegisterRoute('/upload', rmGet, @uploadEndpoint);
   HTTPRouter.RegisterRoute('/upload', rmPost, @uploadEndpoint);
-  HTTPRouter.RegisterRoute('/translation', rmGet, @translationEndpoint);
+  
+  // API routes
   HTTPRouter.RegisterRoute('/json', rmGet, @jsonEndpoint);
-  HTTPRouter.RegisterRoute('/screeninfo', @screenInfoEndpoint);
+  HTTPRouter.RegisterRoute('/screeninfo', rmPost, @screenInfoEndpoint);
+  
+  // Legacy redirects (matching router.js redirections)
+  HTTPRouter.RegisterRoute('/boards', rmGet, @allBoardsEndpoint);
+  HTTPRouter.RegisterRoute('/boards/:id/:slug', rmGet, @boardEndpoint);
+  HTTPRouter.RegisterRoute('/boards/:id/:slug/:cardId', rmGet, @cardEndpoint);
   
   // Add static file server for files in the public directory
   // This route should come before the catchall
@@ -1255,5 +1485,6 @@ begin
   Application.Initialize;
   Writeln('Server is ready at localhost:' + IntToStr(Application.Port));
   Writeln('Static files are served from the public/ directory');
+  Writeln('User storage initialized successfully');
   Application.Run;
 end.
