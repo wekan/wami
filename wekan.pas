@@ -800,13 +800,13 @@ begin
                       '        <img src="font/arrow/white/arrows.gif" width="20" height="20"> <img src="font/arrow/white/ban.gif" width="20" height="20"></a> ' + LineEnding +
                       '        <a href="notifications" name="Notifications"><img src="font/notification/white/bell.gif" width="20" height="20"></a> ' + LineEnding +
                       '        <a href="usersettings" name="UserSettings"><img src="font/setting/white/cog.gif" width="20" heigth="20"> ' + LineEnding +
-                      '        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>');
+                      '        <font size="3" color="#FFFFFF" face="arial">User Name</font></a>' + LineEnding +
                       '      </td>' + LineEnding +
                       '    </tr>' + LineEnding +
                       '    <tr>' + LineEnding +
                       '      <td colspan="8" bgcolor="#2980b9"><font size="5" color="#FFFFFF" face="arial"><b>Notifications</b></font></td>' + LineEnding +
                       '    </tr>' + LineEnding +
-                      '  </table>');
+                      '  </table>' + LineEnding +
                       '<p><a href=".">Back to Home</a></p>' + LineEnding +
                       '</body></html>';
   aResponse.Code := 200;
