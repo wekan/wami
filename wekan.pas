@@ -888,6 +888,280 @@ begin
   aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
                       '<html><head><title>Board - WeKan</title></head><body>' + LineEnding +
                       '<h1>Kanban Board</h1>' + LineEnding +
+
+                      '<style>' + LineEnding +
+                      '  .swimlane { margin-bottom: 20px; }' + LineEnding +
+                      '  .kanban-lists-container {' + LineEnding +
+                      '    display: flex;' + LineEnding +
+                      '    flex-direction: row;' + LineEnding +
+                      '    gap: 20px;' + LineEnding +
+                      '    overflow-x: auto;' + LineEnding +
+                      '  }' + LineEnding +
+                      '  .kanban-list {' + LineEnding +
+                      '    min-width: 250px;' + LineEnding +
+                      '    background: #f4f4f4;' + LineEnding +
+                      '    padding: 10px;' + LineEnding +
+                      '    border-radius: 4px;' + LineEnding +
+                      '  }' + LineEnding +
+                      '  .selected {' + LineEnding +
+                      '    outline: 2px solid #0066ff;' + LineEnding +
+                      '    box-shadow: 0 0 5px rgba(0,102,255,0.5' + LineEnding +
+                      '  }' + LineEnding +
+                      '  .moving {' + LineEnding +
+                      '    opacity: 0.7;' + LineEnding +
+                      '    background: #e0e0e0;' + LineEnding +
+                      '  }' + LineEnding +
+                      '  .kanban-card {' + LineEnding +
+                      '    background: white;' + LineEnding +
+                      '    padding: 8px;' + LineEnding +
+                      '    margin: 8px 0;' + LineEnding +
+                      '    border-radius: 3px;' + LineEnding +
+                      '    box-shadow: 0 1px 3px rgba(0,0,0,0.12' + LineEnding +
+                      '    cursor: pointer;' + LineEnding +
+                      '  }' + LineEnding +
+                      '  .card-placeholder {' + LineEnding +
+                      '    border: 2px dashed #ccc;' + LineEnding +
+                      '    background: #f9f9f9;' + LineEnding +
+                      '    height: 30px;' + LineEnding +
+                      '    margin: 8px 0;' + LineEnding +
+                      '  }' + LineEnding +
+                      '  .swimlane-placeholder {' + LineEnding +
+                      '    border: 2px dashed #ccc;' + LineEnding +
+                      '    background: #f9f9f9;' + LineEnding +
+                      '    height: 50px;' + LineEnding +
+                      '    margin-bottom: 20px;' + LineEnding +
+                      '  }' + LineEnding +
+                      '  .kanban-list-title {' + LineEnding +
+                      '    cursor: move;' + LineEnding +
+                      '  }' + LineEnding +
+                      '</style>' + LineEnding +
+                      '<section id="kanban-board" aria-label="Kanban Board" role="region" tabindex="0">' + LineEnding +
+                      '  <h1>Accessible Kanban Board</h1>' + LineEnding +
+                      '  <div class="swimlane" role="region" aria-label="Swimlane 1" tabindex="0" draggable="true">' + LineEnding +
+                      '    <h2>Swimlane 1</h2>' + LineEnding +
+                      '    <div class="kanban-lists-container">' + LineEnding +
+                      '      <div class="kanban-list" role="list" aria-label="List 1" tabindex="0">' + LineEnding +
+                      '        <h3 class="kanban-list-title" draggable="true">List 1</h3>' + LineEnding +
+                      '        <div class="kanban-card" role="listitem" tabindex="0">Card 1</div>' + LineEnding +
+                      '        <div class="kanban-card" role="listitem" tabindex="0">Card 2</div>' + LineEnding +
+                      '      </div>' + LineEnding +
+                      '      <div class="kanban-list" role="list" aria-label="List 2" tabindex="0">' + LineEnding +
+                      '        <h3 class="kanban-list-title" draggable="true">List 2</h3>' + LineEnding +
+                      '        <div class="kanban-card" role="listitem" tabindex="0">Card A</div>' + LineEnding +
+                      '        <div class="kanban-card" role="listitem" tabindex="0">Card B</div>' + LineEnding +
+                      '      </div>' + LineEnding +
+                      '    </div>' + LineEnding +
+                      '  </div>' + LineEnding +
+                      '  <div class="swimlane" role="region" aria-label="Swimlane 2" tabindex="0" draggable="true">' + LineEnding +
+                      '    <h2>Swimlane 2</h2>' + LineEnding +
+                      '    <div class="kanban-lists-container">' + LineEnding +
+                      '      <div class="kanban-list" role="list" aria-label="List 3" tabindex="0">' + LineEnding +
+                      '        <h3 class="kanban-list-title" draggable="true">List 3</h3>' + LineEnding +
+                      '        <div class="kanban-card" role="listitem" tabindex="0">Card 3</div>' + LineEnding +
+                      '        <div class="kanban-card" role="listitem" tabindex="0">Card 4</div>' + LineEnding +
+                      '      </div>' + LineEnding +
+                      '      <div class="kanban-list" role="list" aria-label="List 4" tabindex="0">' + LineEnding +
+                      '        <h3 class="kanban-list-title" draggable="true">List 4</h3>' + LineEnding +
+                      '        <div class="kanban-card" role="listitem" tabindex="0">Card C</div>' + LineEnding +
+                      '        <div class="kanban-card" role="listitem" tabindex="0">Card D</div>' + LineEnding +
+                      '      </div>' + LineEnding +
+                      '    </div>' + LineEnding +
+                      '  </div>' + LineEnding +
+                      '  <script>' + LineEnding +
+                      '    let selectedElement = null;' + LineEnding +
+                      '    let isMoving = false;' + LineEnding +
+                      '    let sourceList = null;' + LineEnding +
+                      '    let placeholder = null;' + LineEnding +
+                      '    let swimlanePlaceholder = null;' + LineEnding +
+                      '' + LineEnding +
+                      '    function handleSelection(e) {' + LineEnding +
+                      '      const card = e.target.closest(".kanban-card"' + LineEnding +
+                      '      if (!card) return;' + LineEnding +
+                      '' + LineEnding +
+                      '      if (e.key === " ") {' + LineEnding +
+                      '        e.preventDefault(' + LineEnding +
+                      '        if (!isMoving) {' + LineEnding +
+                      '          if (selectedElement) {' + LineEnding +
+                      '            selectedElement.classList.remove("selected"' + LineEnding +
+                      '          }' + LineEnding +
+                      '          selectedElement = card;' + LineEnding +
+                      '          sourceList = card.closest(".kanban-list"' + LineEnding +
+                      '          selectedElement.classList.add("selected", "moving"' + LineEnding +
+                      '          selectedElement.setAttribute("aria-grabbed", "true"' + LineEnding +
+                      '          isMoving = true;' + LineEnding +
+                      '          placeholder = document.createElement("div"' + LineEnding +
+                      '          placeholder.className = "card-placeholder";' + LineEnding +
+                      '          card.parentNode.insertBefore(placeholder, card.nextSibling' + LineEnding +
+                      '        } else {' + LineEnding +
+                      '          completeMove(' + LineEnding +
+                      '        }' + LineEnding +
+                      '      }' + LineEnding +
+                      '    }' + LineEnding +
+                      '' + LineEnding +
+                      '    function completeMove() {' + LineEnding +
+                      '      if (!selectedElement) return;' + LineEnding +
+                      '' + LineEnding +
+                      '      selectedElement.classList.remove("moving", "selected"' + LineEnding +
+                      '      selectedElement.setAttribute("aria-grabbed", "false"' + LineEnding +
+                      '      const targetList = document.activeElement.closest(".kanban-list"' + LineEnding +
+                      '      if (targetList) {' + LineEnding +
+                      '        targetList.insertBefore(selectedElement, placeholder' + LineEnding +
+                      '        announceMove(sourceList, targetList' + LineEnding +
+                      '      }' + LineEnding +
+                      '      placeholder.remove(' + LineEnding +
+                      '      isMoving = false;' + LineEnding +
+                      '      sourceList = null;' + LineEnding +
+                      '      placeholder = null;' + LineEnding +
+                      '    }' + LineEnding +
+                      '' + LineEnding +
+                      '    function announceMove(from, to) {' + LineEnding +
+                      '      const announcement = document.createElement("div"' + LineEnding +
+                      '      announcement.setAttribute("role", "alert"' + LineEnding +
+                      '      announcement.setAttribute("aria-live", "polite"' + LineEnding +
+                      '      announcement.textContent = `Card moved from ${from.querySelector("h3").textContent} to ${to.querySelector("h3").textContent}`;' + LineEnding +
+                      '      document.body.appendChild(announcement' + LineEnding +
+                      '      setTimeout(() => announcement.remove(), 1000' + LineEnding +
+                      '    }' + LineEnding +
+                      '' + LineEnding +
+                      '    document.addEventListener("keydown", function(e) {' + LineEnding +
+                      '      if (e.key === " ") {' + LineEnding +
+                      '        handleSelection(e' + LineEnding +
+                      '      }' + LineEnding +
+                      '      ' + LineEnding +
+                      '      if (isMoving) {' + LineEnding +
+                      '        const lists = Array.from(document.querySelectorAll(".kanban-list")' + LineEnding +
+                      '        const currentList = document.activeElement.closest(".kanban-list"' + LineEnding +
+                      '        const currentIndex = lists.indexOf(currentList' + LineEnding +
+                      '' + LineEnding +
+                      '        switch(e.key) {' + LineEnding +
+                      '          case "ArrowLeft":' + LineEnding +
+                      '            e.preventDefault(' + LineEnding +
+                      '            if (currentIndex > 0) {' + LineEnding +
+                      '              lists[currentIndex - 1].focus(' + LineEnding +
+                      '            }' + LineEnding +
+                      '            break;' + LineEnding +
+                      '          case "ArrowRight":' + LineEnding +
+                      '            e.preventDefault(' + LineEnding +
+                      '            if (currentIndex < lists.length - 1) {' + LineEnding +
+                      '              lists[currentIndex + 1].focus(' + LineEnding +
+                      '            }' + LineEnding +
+                      '            break;' + LineEnding +
+                      '          case "ArrowUp":' + LineEnding +
+                      '            e.preventDefault(' + LineEnding +
+                      '            if (selectedElement.previousElementSibling && selectedElement.previousElementSibling !== placeholder) {' + LineEnding +
+                      '              selectedElement.parentNode.insertBefore(placeholder, selectedElement.previousElementSibling' + LineEnding +
+                      '            }' + LineEnding +
+                      '            break;' + LineEnding +
+                      '          case "ArrowDown":' + LineEnding +
+                      '            e.preventDefault(' + LineEnding +
+                      '            if (selectedElement.nextElementSibling) {' + LineEnding +
+                      '              selectedElement.parentNode.insertBefore(placeholder, selectedElement.nextElementSibling.nextSibling' + LineEnding +
+                      '            }' + LineEnding +
+                      '            break;' + LineEnding +
+                      '          case "Escape":' + LineEnding +
+                      '            e.preventDefault(' + LineEnding +
+                      '            selectedElement.classList.remove("moving", "selected"' + LineEnding +
+                      '            selectedElement.setAttribute("aria-grabbed", "false"' + LineEnding +
+                      '            placeholder.remove(' + LineEnding +
+                      '            isMoving = false;' + LineEnding +
+                      '            break;' + LineEnding +
+                      '        }' + LineEnding +
+                      '      }' + LineEnding +
+                      '    }' + LineEnding +
+                      '' + LineEnding +
+                      '    document.querySelectorAll(".kanban-card").forEach(card => {' + LineEnding +
+                      '      card.setAttribute("draggable", "true"' + LineEnding +
+                      '      card.addEventListener("dragstart", function(e) {' + LineEnding +
+                      '        selectedElement = e.target;' + LineEnding +
+                      '        sourceList = selectedElement.closest(".kanban-list"' + LineEnding +
+                      '        e.dataTransfer.effectAllowed = "move";' + LineEnding +
+                      '        setTimeout(() => selectedElement.classList.add("moving"), 0' + LineEnding +
+                      '      }' + LineEnding +
+                      '      card.addEventListener("dragend", function() {' + LineEnding +
+                      '        selectedElement.classList.remove("moving"' + LineEnding +
+                      '        selectedElement = null;' + LineEnding +
+                      '        sourceList = null;' + LineEnding +
+                      '      }' + LineEnding +
+                      '    }' + LineEnding +
+                      '' + LineEnding +
+                      '    document.querySelectorAll(".kanban-list").forEach(list => {' + LineEnding +
+                      '      list.addEventListener("dragover", function(e) {' + LineEnding +
+                      '        e.preventDefault(' + LineEnding +
+                      '        e.dataTransfer.dropEffect = "move";' + LineEnding +
+                      '        const afterElement = getDragAfterElement(list, e.clientY' + LineEnding +
+                      '        if (afterElement == null) {' + LineEnding +
+                      '          list.appendChild(placeholder' + LineEnding +
+                      '        } else {' + LineEnding +
+                      '          list.insertBefore(placeholder, afterElement' + LineEnding +
+                      '        }' + LineEnding +
+                      '      }' + LineEnding +
+                      '      list.addEventListener("drop", function(e) {' + LineEnding +
+                      '        e.preventDefault(' + LineEnding +
+                      '        if (selectedElement) {' + LineEnding +
+                      '          list.insertBefore(selectedElement, placeholder' + LineEnding +
+                      '          announceMove(sourceList, list' + LineEnding +
+                      '        }' + LineEnding +
+                      '        placeholder.remove(' + LineEnding +
+                      '      }' + LineEnding +
+                      '    }' + LineEnding +
+                      '' + LineEnding +
+                      '    document.querySelectorAll(".swimlane").forEach(swimlane => {' + LineEnding +
+                      '      swimlane.addEventListener("dragstart", function(e) {' + LineEnding +
+                      '        selectedElement = e.target;' + LineEnding +
+                      '        e.dataTransfer.effectAllowed = "move";' + LineEnding +
+                      '        setTimeout(() => selectedElement.classList.add("moving"), 0' + LineEnding +
+                      '      }' + LineEnding +
+                      '      swimlane.addEventListener("dragend", function() {' + LineEnding +
+                      '        selectedElement.classList.remove("moving"' + LineEnding +
+                      '        selectedElement = null;' + LineEnding +
+                      '      }' + LineEnding +
+                      '      swimlane.addEventListener("dragover", function(e) {' + LineEnding +
+                      '        e.preventDefault(' + LineEnding +
+                      '        e.dataTransfer.dropEffect = "move";' + LineEnding +
+                      '        const afterElement = getDragAfterElement(swimlane.parentNode, e.clientY' + LineEnding +
+                      '        if (afterElement == null) {' + LineEnding +
+                      '          swimlane.parentNode.appendChild(swimlanePlaceholder' + LineEnding +
+                      '        } else {' + LineEnding +
+                      '          swimlane.parentNode.insertBefore(swimlanePlaceholder, afterElement' + LineEnding +
+                      '        }' + LineEnding +
+                      '      }' + LineEnding +
+                      '      swimlane.addEventListener("drop", function(e) {' + LineEnding +
+                      '        e.preventDefault(' + LineEnding +
+                      '        if (selectedElement) {' + LineEnding +
+                      '          swimlane.parentNode.insertBefore(selectedElement, swimlanePlaceholder' + LineEnding +
+                      '        }' + LineEnding +
+                      '        swimlanePlaceholder.remove(' + LineEnding +
+                      '      }' + LineEnding +
+                      '    }' + LineEnding +
+                      '' + LineEnding +
+                      '    document.querySelectorAll(".kanban-list-title").forEach(title => {' + LineEnding +
+                      '      title.addEventListener("dragstart", function(e) {' + LineEnding +
+                      '        selectedElement = e.target.closest(".kanban-list"' + LineEnding +
+                      '        e.dataTransfer.effectAllowed = "move";' + LineEnding +
+                      '        setTimeout(() => selectedElement.classList.add("moving"), 0' + LineEnding +
+                      '      }' + LineEnding +
+                      '      title.addEventListener("dragend", function() {' + LineEnding +
+                      '        selectedElement.classList.remove("moving"' + LineEnding +
+                      '        selectedElement = null;' + LineEnding +
+                      '      }' + LineEnding +
+                      '    }' + LineEnding +
+                      '' + LineEnding +
+                      '    function getDragAfterElement(container, y) {' + LineEnding +
+                      '      const draggableElements = [...container.querySelectorAll(".swimlane:not(.moving)")];' + LineEnding +
+                      '' + LineEnding +
+                      '      return draggableElements.reduce((closest, child) => {' + LineEnding +
+                      '        const box = child.getBoundingClientRect(' + LineEnding +
+                      '        const offset = y - box.top - box.height / 2;' + LineEnding +
+                      '        if (offset < 0 && offset > closest.offset) {' + LineEnding +
+                      '          return { offset: offset, element: child };' + LineEnding +
+                      '        } else {' + LineEnding +
+                      '          return closest;' + LineEnding +
+                      '        }' + LineEnding +
+                      '      }, { offset: Number.NEGATIVE_INFINITY }).element;' + LineEnding +
+                      '    }' + LineEnding +
+                      '  </script>' + LineEnding +
+                      '</section>' + LineEnding +
+
                       '<table border="0" padding="0" spacing="0" width="100%">' + LineEnding +
                       '  <tbody>' + LineEnding +
                       '    <tr>' + LineEnding +
