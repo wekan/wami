@@ -18,7 +18,10 @@
 
 #### 3) Serverside rendering
 
-- Serverside rendering, so it works with all browsers.
+- Serverside rendering, so it works with all browsers
+  - No errors like `Uncaught RangeError: Maximum call stack size exceeded` that could be related to some Async Await code somewhere
+    - https://github.com/wekan/wekan-meteor3/issues/3
+    - https://forums.meteor.com/t/prd-for-migrating-to-meteor-3-using-ai-tools/63876/2?u=xet7
 - Visible without Javascript. Checkboxes to select cards, submit buttons to move etc. This also means that features like Gantt Chart and Red Strings will 
 - If browser supports Javascript, drag drop etc features that are possible with Javascript
 
