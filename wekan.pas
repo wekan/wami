@@ -460,8 +460,6 @@ begin
       Add('      h1     { font-size: 2.5em; }');
       Add('      input  { font-size: 1em; padding: 0.5em; }');
       Add('      button { font-size: 1.2em; }');
-      Add('      .form-container { display: flex; flex-direction: column; }');
-      Add('      .form-field { display: flex; }');
       Add('    </style>');
       Add('</head>');
       Add('<body bgcolor="#ffffff">');
@@ -469,10 +467,10 @@ begin
       Add('    <h1>WeKan</h1>');
       Add('    <form role="form" novalidate action="sign-in" method="POST">');
       Add('      <label for="username">Username or Email</label><br>');
-      Add('      <input type="text" class="form-control" id="username" name="username" ');
+      Add('      <input type="text" id="username" name="username" ');
       Add('             placeholder="Enter username or email" required><br><br>');
       Add('      <label for="password">Password</label><br>');
-      Add('      <input type="password" class="form-control" id="password" name="password" ');
+      Add('      <input type="password" id="password" name="password" ');
       Add('             placeholder="Enter password" required><br><br>');
       Add('      <button type="submit" class="btn btn-primary btn-block">Sign In</button><br><br>');
       Add('    </form>');
@@ -569,24 +567,37 @@ begin
   else
   begin
     // Show registration form (GET request)
-    aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
-                        '<html><head><title>Sign Up - WeKan</title></head><body>' + LineEnding +
-                        '<h1>Sign Up</h1>' + LineEnding +
-                        '<p>Create a new account:</p>' + LineEnding +
-                        '<form action="sign-up" method="POST">' + LineEnding +
-                        '  <label for="username">Username:</label><br>' + LineEnding +
-                        '  <input type="text" id="username" name="username" required><br><br>' + LineEnding +
-                        '  <label for="email">Email:</label><br>' + LineEnding +
-                        '  <input type="email" id="email" name="email" required><br><br>' + LineEnding +
-                        '  <label for="password">Password:</label><br>' + LineEnding +
-                        '  <input type="password" id="password" name="password" required><br><br>' + LineEnding +
-                        '  <label for="confirm_password">Confirm Password:</label><br>' + LineEnding +
-                        '  <input type="password" id="confirm_password" name="confirm_password" required><br><br>' + LineEnding +
-                        '  <input type="submit" value="Sign Up">' + LineEnding +
-                        '</form>' + LineEnding +
-                        '<p><a href="sign-in">Already have an account? Sign in</a></p>' + LineEnding +
-                        '<p><a href=".">Back to Home</a></p>' + LineEnding +
-                        '</body></html>';
+        aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                            '<html>' + LineEnding +
+                            '  <head>' + LineEnding +
+                            '    <title>Sign Up - WeKan</title>' + LineEnding +
+                            '    <style type="text/css">' + LineEnding +
+                            '      body   { font-family: arial, sans-serif; font-size: 1.2em; }' + LineEnding +
+                            '      h1     { font-size: 2.5em; }' + LineEnding +
+                            '      input  { font-size: 1em; padding: 0.5em; }' + LineEnding +
+                            '      button { font-size: 1.2em; }' + LineEnding +
+                            '    </style>' + LineEnding +
+                            '</head>' + LineEnding +
+                            '<body bgcolor="#ffffff">' + LineEnding +
+                            '  <center>' + LineEnding +
+                            '    <h1>Sign Up</h1>' + LineEnding +
+                            '    <form action="sign-up" method="POST">' + LineEnding +
+                            '      <label for="username">Username:</label><br>' + LineEnding +
+                            '      <input type="text" id="username" name="username" required><br><br>' + LineEnding +
+                            '      <label for="email">Email:</label><br>' + LineEnding +
+                            '      <input type="email" id="email" name="email" required><br><br>' + LineEnding +
+                            '      <label for="password">Password:</label><br>' + LineEnding +
+                            '      <input type="password" id="password" name="password" required><br><br>' + LineEnding +
+                            '      <label for="confirm_password">Confirm Password:</label><br>' + LineEnding +
+                            '      <input type="password" id="confirm_password" name="confirm_password" required><br><br>' + LineEnding +
+                            '      <input type="submit" value="Sign Up">' + LineEnding +
+                            '      </form>' + LineEnding +
+                            '    <p><a href="sign-in">Already have an account? Sign in</a></p>' + LineEnding +
+                            '    <p><a href="forgot-password">Forgot password?</a></p>' + LineEnding +
+                            '  </center>' + LineEnding +
+                            '</body>' + LineEnding +
+                            '</html>';
+
   end;
   aResponse.Code := 200;
   aResponse.ContentType := 'text/html';
