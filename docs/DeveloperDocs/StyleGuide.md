@@ -133,3 +133,16 @@ These only work at modern browsers, so use only if it looks similar with above H
       - Like having same kanban instance have many different domain URLs for many organizations
       - Makes possible to combine many separate MultiSnap WeKan for separate domains to one WeKan https://github.com/wekan/wekan/blob/main/docs/Platforms/FOSS/Snap/Many-Snaps-on-LXC.md
       - This is not possible with Meteor, that requires environment setting ROOT_URL. This is only possible with Wami.
+
+## Related, not verified yet what could be useful
+
+- Why HTML is better than you think it is
+  - https://www.youtube.com/watch?v=8YBBfNJacDk
+  - Tony on X: https://x.com/tonyennis
+  - Html First: https://html-first.com
+  - Mini JS: https://mini-js.com
+  - Base Styles: https://base-styles.com
+  - Tony's talk at big Sky: https://www.youtube.com/watch?v=aknX6xq8Vfg
+  - Una at Google IO: https://www.youtube.com/watch?v=VTCIStB6y8s
+
+
