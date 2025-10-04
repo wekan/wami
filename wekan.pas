@@ -451,54 +451,34 @@ begin
     aResponse.Content := '';
     with aResponse.Contents do
     begin
-      Add('<p></p>');
-      Add('<center>');
-      Add('  <table border="0" padding="0" spacing="0" margin="0">');
-      Add('    <tr>');
-      Add('      <td style="background-color: #f7f7f7;">');
-      Add('        <h1 style="font-size: 140%; padding-top: 10px;');
-      Add('                   padding-left: 20px; padding-bottom: 0px;">');
-      Add('          Login');
-      Add('        </h1>');
-      Add('      </td>');
-      Add('    </tr>');
-      Add('    <tr>');
-      Add('      <td style="padding-top: 20px; padding-left: 20px;');
-      Add('                 padding-right: 20px; background-color: white;">');
-      Add('        <form    role="form"');
-      Add('                 novalidate');
-      Add('                 action="sign-in"');
-      Add('                 method="POST">');
-      Add('          <div class="form-group">');
-      Add('            <label for="username">Username or Email</label>');
-      Add('            <input type="text"');
-      Add('                   class="form-control"');
-      Add('                   id="username"');
-      Add('                   name="username"');
-      Add('                   placeholder="Enter username or email"');
-      Add('                   required>');
-      Add('          </div>');
-      Add('          <div class="form-group">');
-      Add('            <label for="password">Password</label>');
-      Add('            <input type="password"');
-      Add('                   class="form-control"');
-      Add('                   id="password"');
-      Add('                   name="password"');
-      Add('                   placeholder="Enter password"');
-      Add('                   required>');
-      Add('          </div>');
-      Add('          <button type="submit"');
-      Add('                  class="btn btn-primary btn-block">');
-      Add('            Sign In');
-      Add('          </button>');
-      Add('        </form>');
-      Add('        <p><a href="sign-up">Need an account? Sign up</a></p>');
-      Add('        <p><a href="forgot-password">Forgot your password?</a></p>');
-      Add('        <p><a href=".">Back to Home</a></p>');
-      Add('      </td>');
-      Add('    </tr>');
-      Add('  </table>');
-      Add('</center>');
+      Add('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">');
+      Add('<html>');
+      Add('  <head>');
+      Add('    <title>WeKan</title>');
+      Add('    <style type="text/css">');
+      Add('      body   { font-family: arial, sans-serif; font-size: 1.2em; }');
+      Add('      h1     { font-size: 2.5em; }');
+      Add('      input  { font-size: 1em; padding: 0.5em; }');
+      Add('      button { font-size: 1.2em; }');
+      Add('    </style>');
+      Add('</head>');
+      Add('<body bgcolor="#ffffff">');
+      Add('  <center>');
+      Add('    <h1>WeKan</h1>');
+      Add('    <form role="form" novalidate action="sign-in" method="POST">');
+      Add('      <label for="username">Username or Email</label><br>');
+      Add('      <input type="text" id="username" name="username" ');
+      Add('             placeholder="Enter username or email" required><br><br>');
+      Add('      <label for="password">Password</label><br>');
+      Add('      <input type="password" id="password" name="password" ');
+      Add('             placeholder="Enter password" required><br><br>');
+      Add('      <button type="submit" class="btn btn-primary btn-block">Sign In</button><br><br>');
+      Add('    </form>');
+      Add('    <p><a href="sign-up">Need an account? Sign up</a></p>');
+      Add('    <p><a href="forgot-password">Forgot your password?</a></p>');
+      Add('  </center>');
+      Add('</body>');
+      Add('</html>')
     end;
   end;
   aResponse.Code := 200;
@@ -587,24 +567,37 @@ begin
   else
   begin
     // Show registration form (GET request)
-    aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
-                        '<html><head><title>Sign Up - WeKan</title></head><body>' + LineEnding +
-                        '<h1>Sign Up</h1>' + LineEnding +
-                        '<p>Create a new account:</p>' + LineEnding +
-                        '<form action="sign-up" method="POST">' + LineEnding +
-                        '  <label for="username">Username:</label><br>' + LineEnding +
-                        '  <input type="text" id="username" name="username" required><br><br>' + LineEnding +
-                        '  <label for="email">Email:</label><br>' + LineEnding +
-                        '  <input type="email" id="email" name="email" required><br><br>' + LineEnding +
-                        '  <label for="password">Password:</label><br>' + LineEnding +
-                        '  <input type="password" id="password" name="password" required><br><br>' + LineEnding +
-                        '  <label for="confirm_password">Confirm Password:</label><br>' + LineEnding +
-                        '  <input type="password" id="confirm_password" name="confirm_password" required><br><br>' + LineEnding +
-                        '  <input type="submit" value="Sign Up">' + LineEnding +
-                        '</form>' + LineEnding +
-                        '<p><a href="sign-in">Already have an account? Sign in</a></p>' + LineEnding +
-                        '<p><a href=".">Back to Home</a></p>' + LineEnding +
-                        '</body></html>';
+        aResponse.Content := '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' + LineEnding +
+                            '<html>' + LineEnding +
+                            '  <head>' + LineEnding +
+                            '    <title>Sign Up - WeKan</title>' + LineEnding +
+                            '    <style type="text/css">' + LineEnding +
+                            '      body   { font-family: arial, sans-serif; font-size: 1.2em; }' + LineEnding +
+                            '      h1     { font-size: 2.5em; }' + LineEnding +
+                            '      input  { font-size: 1em; padding: 0.5em; }' + LineEnding +
+                            '      button { font-size: 1.2em; }' + LineEnding +
+                            '    </style>' + LineEnding +
+                            '</head>' + LineEnding +
+                            '<body bgcolor="#ffffff">' + LineEnding +
+                            '  <center>' + LineEnding +
+                            '    <h1>Sign Up</h1>' + LineEnding +
+                            '    <form action="sign-up" method="POST">' + LineEnding +
+                            '      <label for="username">Username:</label><br>' + LineEnding +
+                            '      <input type="text" id="username" name="username" required><br><br>' + LineEnding +
+                            '      <label for="email">Email:</label><br>' + LineEnding +
+                            '      <input type="email" id="email" name="email" required><br><br>' + LineEnding +
+                            '      <label for="password">Password:</label><br>' + LineEnding +
+                            '      <input type="password" id="password" name="password" required><br><br>' + LineEnding +
+                            '      <label for="confirm_password">Confirm Password:</label><br>' + LineEnding +
+                            '      <input type="password" id="confirm_password" name="confirm_password" required><br><br>' + LineEnding +
+                            '      <input type="submit" value="Sign Up">' + LineEnding +
+                            '      </form>' + LineEnding +
+                            '    <p><a href="sign-in">Already have an account? Sign in</a></p>' + LineEnding +
+                            '    <p><a href="forgot-password">Forgot password?</a></p>' + LineEnding +
+                            '  </center>' + LineEnding +
+                            '</body>' + LineEnding +
+                            '</html>';
+
   end;
   aResponse.Code := 200;
   aResponse.ContentType := 'text/html';
