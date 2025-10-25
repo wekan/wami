@@ -44,3 +44,5 @@ ehthumbs.db
 /helm/wekan/charts
 *.csv
 /uploads
+/build
+/dist
