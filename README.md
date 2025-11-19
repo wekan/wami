@@ -1,366 +1,125 @@
-# WeKan WAMI - FreePascal Implementation
+# Wami: WeKan made with FreePascal for Amiga etc
 
-WeKan WAMI (Web Application Modern Interface) is a FreePascal implementation of the popular WeKan kanban board application. It provides the same functionality as the original Meteor 2 WeKan while offering cross-platform compatibility and improved performance.
+## Design
 
-## Features
+- Works at all browsers with same code
+  - Modern
+    - Drag multiple cards at once with touch at modern devices with https://interactjs.io
+    - SVG/VML for vector drawing
+  - Retro
+    - HTML4 like at https://aminet.net
+    - Icons with GIF images, because GIF works at all browsers
+    - [Round corners](https://github.com/wekan/wekan/issues/4326) for cards and board icons with transparent corner GIF image
+    - Vector drawing at all browsers, function DrawLine(), for Pi Program Board with Red (and other color) Strings https://github.com/wekan/wekan/issues/3392
+      - SVG
+        - Netsurf
+        - Safari/Chromium/Firefox based browsers
+      - VML
+        - IE6
+      - TODO: ASCII art
+        - Amiga IBrowse
+        - Elinks
+        - w3m
+   - Not supported browsers:
+     - Why?
+       - No HTML Button and submit form features. How to save form data?
+       - Is there some way to get these working?
+     - IE3 at Win95
+     - Netscape at OS/2
+- Accessibility
+  - Like KDE accessibility issue
+    - EU Directive 2019/882
+    - https://invent.kde.org/teams/accessibility/collaboration/-/issues/30
+    - https://www.youtube.com/watch?v=PM6TRj54L_8
 
-- **Cross-Platform**: Works on all browsers from modern to legacy (Amiga IBrowse, FreeDOS Dillo)
-- **Server-Side Rendering**: HTML4-based with progressive enhancement
-- **Real-time Collaboration**: WebSocket support for live updates
-- **Universal Compatibility**: Same code works across all browsers
-- **Offline Compilation**: No internet dependencies during build
-- **Single Binary**: Easy deployment with single executable
-- **SQLite Database**: Lightweight and efficient data storage
-- **REST API**: Compatible with WeKan API endpoints
+## Screenshot
 
-## Architecture
+FreePascal compilers for many operating systems:
+https://www.freepascal.org/download.html
 
-### Core Components
+Here is that wekan.pas compiled with FreePascal at
+AmigaOS 3.2 680x0, using IBrowse webbrowser,
+running at AmiBerry Amiga Emulator
+(AmiBerry executeable originally for RasPi4),
+running at M1 Air Asahi Ubuntu 24.04:
 
-- **FreePascal Web Framework**: Built on fpWeb for HTTP handling
-- **SQLite Database**: Primary data storage with MongoDB compatibility layer
-- **Authentication System**: Session-based authentication with JWT support
-- **Real-time Engine**: WebSocket implementation for live collaboration
-- **Template Engine**: Server-side HTML generation
-- **File Management**: Local file storage with cloud integration support
+![screenshot](screenshot.png)
 
-### Database Schema
+## Cloning repo
 
-The application uses SQLite with a schema that mirrors the original WeKan MongoDB structure:
+```
+git clone https://github.com/wekan/wami
 
-- **Users**: User accounts and authentication
-- **Boards**: Kanban boards with permissions
-- **Lists**: Board columns/lists
-- **Cards**: Individual task cards
-- **Activities**: Activity logging and history
-- **Attachments**: File attachments
-- **Comments**: Card comments
-- **Checklists**: Task checklists
-
-## Installation
-
-### Prerequisites
-
-- FreePascal Compiler (fpc) 3.2.0 or later
-- SQLite 3.x
-- Git (for cloning the repository)
-
-### Building from Source
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/wekan/wami
-   cd wami
-   ```
-
-2. **Install FreePascal**:
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install fpc
-   
-   # CentOS/RHEL
-   sudo yum install fpc
-   
-   # Windows
-   # Download from https://www.freepascal.org/download.html
-   
-   # macOS
-   brew install fpc
-   ```
-
-3. **Build the application**:
-   ```bash
-   # Build for current platform
-   ./scripts/build.sh
-   
-   # Build for all platforms
-   ./scripts/build.sh --all
-   
-   # Build for specific platform
-   ./scripts/build.sh linux windows
-   ```
-
-4. **Run the application**:
-   ```bash
-   ./build/wekan-linux-x64
-   ```
-
-## Configuration
-
-The application uses a configuration file `config/wekan.conf`:
-
-```ini
-# Database configuration
-database_file=wekan.db
-
-# Server configuration
-port=5500
-log_level=INFO
-session_timeout=3600
-
-# File upload configuration
-max_file_size=10485760
-upload_path=uploads/
-
-# Static file configuration
-public_path=public/
+cd wami
 ```
 
-## Usage
+## Compiling with FreePascal
 
-### Starting the Server
+```
+fpc wekan.pas
+```
 
-```bash
+## Running at Amiga
+
+```
+wekan
+```
+
+## Running at Linux
+
+Add executeable permission:
+```
+chmod +x wekan
+```
+
+Run:
+```
 ./wekan
 ```
 
-The server will start on port 5500 by default. Open your browser and navigate to:
-- http://localhost:5500
-
-### API Endpoints
-
-The application provides REST API endpoints compatible with WeKan:
-
-- **Boards**: `/api/boards`
-- **Lists**: `/api/boards/:boardId/lists`
-- **Cards**: `/api/boards/:boardId/lists/:listId/cards`
-- **Users**: `/api/users`
-- **Authentication**: `/api/auth/login`, `/api/auth/logout`
-
-### Browser Compatibility
-
-WeKan WAMI works with all browsers:
-
-- **Modern Browsers**: Chrome, Firefox, Safari, Edge (full features)
-- **Legacy Browsers**: IE6, IE7 (basic features)
-- **Retro Browsers**: Amiga IBrowse, FreeDOS Dillo (text-only)
-- **Text Browsers**: Lynx, ELinks (text-only)
-
-## Development
-
-### Project Structure
+## Running at Windows
 
 ```
-wami/
-├── src/                    # Source code
-│   ├── wekan.pas          # Main application
-│   ├── core/              # Core functionality
-│   ├── database/          # Database layer
-│   ├── web/               # Web framework
-│   ├── auth/              # Authentication
-│   ├── models/            # Data models
-│   ├── api/               # API handlers
-│   └── utils/             # Utility functions
-├── config/                # Configuration files
-├── scripts/               # Build scripts
-├── public/                # Static files
-├── uploads/               # File uploads
-└── backups/               # Database backups
+wekan.exe
 ```
 
-### Adding New Features
+## Stopping
 
-1. **Create the model** in `src/models/`
-2. **Add database schema** in `src/database/`
-3. **Implement API handlers** in `src/api/`
-4. **Add web routes** in `src/web/`
-5. **Update templates** in `public/`
+Keyboard keys `Ctrl` and `c`:
 
-### Testing
-
-```bash
-# Run tests (when implemented)
-./scripts/test.sh
-
-# Check code quality
-./scripts/lint.sh
+```
+Ctrl-c
 ```
 
-## Deployment
+## Web framework
 
-### Single Binary Deployment
+https://wiki.freepascal.org/fpWeb_Tutorial
 
-The application compiles to a single binary that includes all dependencies:
+## Web browsers
 
-```bash
-# Copy binary to target system
-scp wekan-linux-x64 user@server:/opt/wekan/
+- Tested with all browsers, works also without Javascript:
+  - Modern browsers based on: Chromium, Firefox, Safari
+  - Upcoming browsers: Ladybird
+  - Limited Javascript: Netsurf, Amiga IBrowse, ReactOS 32bit Wine Internet Explorer
+  - Without Javascript: Lynx, ELinks, w3m w3m-img, FreeDOS Dillo
+  - Legacy browsers: Netscape, IE
+- If browser has Javascript support, Javascript code can use https://unpoly.com for additional effects.
+- No cookies. No localstorage. Sessions stored to serverside database, based on browser properties. More info at https://github.com/wekan/wekanstudio/blob/main/docs/roadmap.md#sessions
 
-# Run on target system
-./wekan-linux-x64
-```
+## Backend: FreePascal/SQLite
 
-### Docker Deployment
+- SSR (Server Side Rendering). Like Web 1.0, with HTML/CSS at frontend
+  using HTML Forms with POST/GET. FreePascal at backend. Similar like LAMP.
 
-```dockerfile
-FROM alpine:latest
-RUN apk add --no-cache fpc sqlite
-COPY wekan /app/
-COPY public/ /app/public/
-WORKDIR /app
-EXPOSE 5500
-CMD ["./wekan"]
-```
+## This is one of WeKan Multiverse prototypes
 
-### System Service
+- WeKan Open Source kanban https://wekan.github.io https://github.com/wekan/wekan/wiki/Deep-Dive-Into-WeKan
+  - Same features, with changes to use minimal amount of code
+  - Same API:
+    - https://wekan.github.io/api/ 
+    - https://github.com/wekan/wekan/blob/main/api.py
+- WeKan Multiverse prototypes https://github.com/wekan/wekan/wiki/WeKan-Multiverse-Roadmap
+- Database structure is same as in WeKan Open Source kanban https://wekan.github.io https://github.com/wekan/wekan (also features will be same and more),
+  when exported to SQLite with https://github.com/wekan/minio-metadata
 
-Create a systemd service file:
-
-```ini
-[Unit]
-Description=WeKan WAMI
-After=network.target
-
-[Service]
-Type=simple
-User=wekan
-WorkingDirectory=/opt/wekan
-ExecStart=/opt/wekan/wekan
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-## Migration from Meteor 2 WeKan
-
-### Data Migration
-
-1. **Export from MongoDB**:
-   ```bash
-   mongodump --db wekan --out backup/
-   ```
-
-2. **Convert to SQLite**:
-   ```bash
-   ./scripts/migrate-mongo-to-sqlite.sh backup/ wekan.db
-   ```
-
-3. **Import to WAMI**:
-   ```bash
-   ./wekan --import wekan.db
-   ```
-
-### API Compatibility
-
-WAMI maintains API compatibility with WeKan:
-
-- All REST endpoints work the same
-- JSON responses have the same structure
-- Authentication uses the same session format
-- File uploads use the same format
-
-## Performance
-
-### Benchmarks
-
-- **Startup Time**: < 100ms (vs 2-3 seconds for Meteor)
-- **Memory Usage**: < 50MB (vs 200-500MB for Meteor)
-- **Response Time**: < 50ms (vs 100-200ms for Meteor)
-- **Concurrent Users**: 1000+ (vs 100-200 for Meteor)
-
-### Optimization
-
-- **Database**: SQLite with proper indexing
-- **Caching**: In-memory caching for frequently accessed data
-- **Static Files**: Efficient serving of CSS/JS/images
-- **Compression**: Gzip compression for text content
-
-## Security
-
-### Security Features
-
-- **Input Validation**: All user input sanitized
-- **SQL Injection Prevention**: Parameterized queries
-- **XSS Protection**: Output encoding
-- **CSRF Protection**: Token-based validation
-- **Rate Limiting**: Request throttling
-- **Session Security**: Secure session management
-
-### Best Practices
-
-- Use HTTPS in production
-- Regular security updates
-- Monitor access logs
-- Backup data regularly
-- Use strong passwords
-
-## Contributing
-
-### Development Setup
-
-1. **Fork the repository**
-2. **Create a feature branch**
-3. **Make your changes**
-4. **Test thoroughly**
-5. **Submit a pull request**
-
-### Code Style
-
-- Use PascalCase for types and classes
-- Use camelCase for variables and functions
-- Add comments for complex logic
-- Follow FreePascal conventions
-
-### Testing
-
-- Write unit tests for new features
-- Test on multiple platforms
-- Verify browser compatibility
-- Check performance impact
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-### Documentation
-
-- [API Documentation](docs/API.md)
-- [Deployment Guide](docs/Deployment.md)
-- [Developer Guide](docs/Development.md)
-- [FAQ](docs/FAQ.md)
-
-### Community
-
-- [GitHub Issues](https://github.com/wekan/wami/issues)
-- [Discussions](https://github.com/wekan/wami/discussions)
-- [Wiki](https://github.com/wekan/wami/wiki)
-
-### Commercial Support
-
-For commercial support and consulting, contact the WeKan team.
-
-## Roadmap
-
-### Version 1.1 (Q2 2025)
-
-- [ ] WebSocket real-time features
-- [ ] File upload system
-- [ ] Import/Export functionality
-- [ ] Mobile optimization
-
-### Version 1.2 (Q3 2025)
-
-- [ ] Advanced search
-- [ ] Custom fields
-- [ ] Automation rules
-- [ ] API webhooks
-
-### Version 2.0 (Q4 2025)
-
-- [ ] Multi-tenant support
-- [ ] Advanced analytics
-- [ ] Plugin system
-- [ ] Cloud deployment
-
-## Acknowledgments
-
-- **WeKan Team**: Original WeKan development
-- **FreePascal Community**: FreePascal compiler and libraries
-- **Contributors**: All contributors to the WAMI project
-
----
-
-**WeKan WAMI** - Bringing WeKan to all platforms with FreePascal
+Native apps will be added for many CPU/OS. They will use same WeKan APIs, and native hardware features.
