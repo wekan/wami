@@ -1,2 +1,0 @@
-admin:admin:admin@example.com:false
-xet7:hunaja7:x@xet7.org:false
