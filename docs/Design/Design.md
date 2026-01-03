@@ -2,13 +2,17 @@
 
 - This is Gold Standard for Cross-Platform GUI App Design by [xet7](https://github.com/xet7) https://forum.lunduke.com/t/gold-standard-of-gui-design/1909
 
-#### 1) Compile Offline with FreePascal
+#### 1) Scale down: Offline/Retro/no-JS/minimal first
 
+- Compile Offline with FreePascal
 - Compile step does not download dependencies from Internet, like NPM, PyPi and Rust Crates.io
 - Minimal code, included directly to WeKan repo
 - Many additional OS/CPU platforms of FreePascal https://www.freepascal.org/download.html , much more than what Node.js/Python/Rust supports
-- It's possible to develop Wami with FreePascal at AmigaOS/AROS/MorphOS, compiling and runnign WeKan server, using with IBrowse webbrowser, using SQLite database, using much less CPU and RAM.
-- Platform Promise like GitLab mentioned at GitLab 18 event: "No separate tools required". For WeKan, this means adding to WeKan features like chat, etc, so that I would not need to use RocketChat, and I could move from paid server to server donated to WeKan development that has less RAM and more bandwidth
+- It's possible to develop Wami with FreePascal at AmigaOS/AROS/MorphOS, compiling and running WeKan server, using with IBrowse webbrowser, using SQLite database, using much less CPU and RAM.
+- Platform Promise like GitLab mentioned at GitLab 18 event: "No separate tools required".
+- Possibility save real money and environment, when it will require less CPU, RAM and disk space.
+  - This is very important now that prices of hardware are rising rapidly.
+- [Scale Up](ScaleUp.md)
 
 #### 2) Accessibility
 
