@@ -2,6 +2,14 @@
 
 - This is Gold Standard for Cross-Platform GUI App Design by [xet7](https://github.com/xet7) https://forum.lunduke.com/t/gold-standard-of-gui-design/1909
 
+#### Because
+
+Possibility save real money and environment, when it will require less CPU, RAM and disk space:
+
+- This is very important now that prices of hardware are rising rapidly.
+- RAMpocalype 2026: https://www.youtube.com/watch?v=2wB7JNRU-BQ
+- OpenAI bought 40% or RAM: https://www.youtube.com/watch?v=D0tZpmrDY0w
+
 #### 1) Scale down: Offline/Retro/no-JS/minimal first
 
 - Compile Offline with FreePascal
@@ -10,8 +18,6 @@
 - Many additional OS/CPU platforms of FreePascal https://www.freepascal.org/download.html , much more than what Node.js/Python/Rust supports
 - It's possible to develop Wami with FreePascal at AmigaOS/AROS/MorphOS, compiling and running WeKan server, using with IBrowse webbrowser, using SQLite database, using much less CPU and RAM.
 - Platform Promise like GitLab mentioned at GitLab 18 event: "No separate tools required".
-- Possibility save real money and environment, when it will require less CPU, RAM and disk space.
-  - This is very important now that prices of hardware are rising rapidly.
 - [Scale Up](ScaleUp.md)
 
 #### 2) Accessibility
