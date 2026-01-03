@@ -9,6 +9,7 @@ Possibility save real money and environment, when it will require less CPU, RAM 
 - This is very important now that prices of hardware are rising rapidly.
 - RAMpocalype 2026: https://www.youtube.com/watch?v=2wB7JNRU-BQ
 - OpenAI bought 40% or RAM: https://www.youtube.com/watch?v=D0tZpmrDY0w
+- Games, Electricity Crisis, Prices https://www.youtube.com/watch?v=MNdFW39NssQ
 
 #### 1) Scale down: Offline/Retro/no-JS/minimal first
 
