@@ -1,6 +1,8 @@
 ## Wami: Scale Up
 
 - This is only after scale down version, if it can not scale up enough with minimal tricks
+  - Use fphttpapp and no-JS for retro platforms, keep minimal code, and add minimal scale up tricks
+  - Only add mORMot2 when needing very high scale, because it is very many files
 - Caddy 2 TLS as reverse proxy at front of FreePascal/SQLite
 - Alternative web frameworks:
   - mORMot2: https://github.com/synopse/mORMot2
