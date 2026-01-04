@@ -469,3 +469,86 @@ wekandata/attachments/a1/file1.pdf
 
 wekandata/attachments/b2/file2.pdf
 ```
+
+## why does Amiga SQLite 3.34.0.a version not support WAL?
+
+The missing **WAL (Write-Ahead Logging)** support in Amiga versions (e.g. SQLite 3.34.0.a) is mainly due to the limitations of the AmigaOS operating system in file locking and shared memory.
+
+Although this version is very stable for the Amiga and supports 64-bit integers, for example, WAL mode has not been implemented for the following technical reasons:
+
+### 1. Lack of Shared Memory
+
+SQLite's WAL mode requires a so-called **wal-index** file (often known by the suffix `-shm`) to work. This file is shared memory, which is used by different processes to communicate and keep track of which parts of the database have been written to the log.
+
+* **Problem:** Traditional versions of AmigaOS do not have the standard POSIX-compliant shared memory management (mmap) that SQLite expects in WAL mode.
+
+### 2. File Locking Limitations
+
+WAL mode relies heavily on fine-grained file locking to allow readers and writers to operate simultaneously without data corruption.
+
+* **Problem:** The AmigaDOS `LockRecord` function, which would be needed to lock specific parts of a file, is not implemented or is incomplete in many Amiga file systems (such as the old FFS). The developers of the Amiga version have stated that ensuring reliable locking on all Amiga platforms is very difficult.
+
+### 3. Differences in the VFS (Virtual File System) implementation
+
+The Amiga port uses its own `os_amiga.c` file, which is a modified version of the Unix implementation.
+
+* Since AmigaOS's process management and library loading are significantly different from modern Unix or Windows, the developers have made a conscious choice to leave out WAL support to avoid complexity and potential stability issues.
+
+---
+
+**Summary:**
+If you use SQLite on an Amiga, you will have to resort to the traditional **Rollback Journal** mode (the default). This means that during the write operation the database is locked from other readers, which is usually an acceptable compromise on a single-user system like the Amiga.
+
+> **Note:** WAL mode is specifically designed for simultaneous use by multiple processes or threads, which is rarely used on the Amiga these days for heavy database usage.
+
+
+## What is the default file system for ArosOne v2.9 32bit? What SQLite settings would work well with a large number of users?
+
+In ArosOne v2.9 (32-bit) the default file system is usually **SFS (SmartFileSystem)**. Some partitions or installation media may also use the newer **PFS3** system or the traditional **FFS**, but SFS is the standard in the AROS world due to its fault tolerance and speed.
+
+Since SQLite on Amiga/AROS does not support WAL mode (as stated in the previous answer), managing a "large number of users" is challenging, as in **Rollback Journal** mode a write operation locks the entire database file.
+
+Here are the best settings (`PRAGMA` commands) to make SQLite work as efficiently as possible in an AROS environment when multiple processes or users are reading data:
+
+### 1. PRAGMA settings that improve performance
+
+Run these commands immediately after opening a database connection:
+
+* **`PRAGMA synchronous = NORMAL;`**
+* The default is often `FULL`. `NORMAL` is significantly faster and still safe in most cases on an SFS file system. It reduces synchronization requests to the disk drive.
+
+* **`PRAGMA journal_mode = TRUNCATE;`**
+* Since WAL does not work, `TRUNCATE` is often faster than the default `DELETE`. It does not delete the log file, but empties it to zero length, which saves file system operation time.
+
+* **`PRAGMA cache_size = -2000;`**
+* Sets the cache size to about 2 MB (negative number means kilobytes). If your AROS machine has a lot of memory, you can increase this to e.g. `-10000` (10 MB). This will speed up the reading significantly.
+
+* **`PRAGMA temp_store = MEMORY;`**
+* Forces temporary tables and indexes to RAM instead of disk. This is critical for AROS, where disk I/O can be a bottleneck.
+
+* **`PRAGMA busy_timeout = 5000;`**
+* Very important in "multi-user" mode. If the database is locked, SQLite will wait 5 seconds before returning a "database is locked" error. This gives the writer time to finish.
+
+---
+
+### 2. Strategies for handling "multi-user" on AmigaOS/AROS
+
+Since SQLite is not a server-based database (like MySQL), here are three golden rules for handling heavy load:
+
+1. **Keep transactions short:** Don't leave `BEGIN TRANSACTION` state on for long. The sooner you do a `COMMIT` command, the faster the lock is released to others.
+2. **Use indexes:** Without WAL state, readers have to wait for writers. Make sure all queries are lightning fast (use `EXPLAIN QUERY PLAN`) so they don't unnecessarily allocate the database.
+3. **Consider a centralized server:** If you have a really large number of users and they write constantly, SQLite on Amiga may not be the right tool. An alternative is to create a single AROS process that acts as a "database engine" and receives messages from other programs (e.g. via ARexx or message queues).
+
+### Recommended code snippet (SQL):
+
+```sql
+PRAGMA synchronous = NORMAL;
+
+PRAGMA journal_mode = TRUNCATE;
+
+PRAGMA cache_size = -5000;
+
+PRAGMA temp_store = MEMORY;
+
+PRAGMA busy_timeout = 10000;
+```
